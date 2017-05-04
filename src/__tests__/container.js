@@ -3,7 +3,7 @@ const test = require("ava")
 const createContainerModule = require("../container")
 
 const NOOP_STREAM = {write: () => {}}
-const {createContainer, define} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
 
 test("create", t => {
   const container = createContainer()
@@ -11,10 +11,10 @@ test("create", t => {
 })
 
 test("getting a component instance", t => {
-  const componentDefinition = define({
-    name: "test-component",
+  const componentDefinition = {
+    identifier: "test-component",
     factory: () => "test-component-instance",
-  })
+  }
 
   const container = createContainer()
   container.register(componentDefinition)

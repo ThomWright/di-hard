@@ -5,13 +5,13 @@ const createStreamMock = require("../__mocks__/stream")
 const createContainerModule = require("../container")
 
 const NOOP_STREAM = {write: () => {}}
-const {createContainer, define} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
 
-test("registering a definition", t => {
-  const componentDefinition = define({
-    name: "test-component",
+test("valid definition", t => {
+  const componentDefinition = {
+    identifier: "test-component",
     factory: () => "test-component-instance",
-  })
+  }
 
   const container = createContainer()
   t.notThrows(() => {
@@ -19,17 +19,31 @@ test("registering a definition", t => {
   }, "should accept a registration")
 })
 
-test("registering a name twice", t => {
+
+test("definition with no identifier", t => {
+  const componentDefinition = {
+    factory: () => "test-component-instance",
+  }
+
+  const container = createContainer()
+  const error = t.throws(() => {
+    container.register(componentDefinition)
+  }, Error)
+
+  t.regex(error.message, /identifier/, "should throw an error when definition contains no identifier")
+})
+
+test("same name twice", t => {
   const {
     streamMock,
     writeSpy: stdioSpy,
   } = createStreamMock(sinon)
   const {createContainer} = createContainerModule({stdio: streamMock})
 
-  const componentDefinition = define({
-    name: "unique-component-name",
+  const componentDefinition = {
+    identifier: "unique-component-name",
     factory: () => "test-component-instance",
-  })
+  }
 
   const container = createContainer()
   container.register(componentDefinition)
@@ -37,5 +51,5 @@ test("registering a name twice", t => {
 
   t.true(stdioSpy.called, "should emit a warning log")
   const output = stdioSpy.firstCall.args[0]
-  t.true(output.includes("unique-component-name"), "should warn about repeated registration")
+  t.regex(output, /unique-component-name/, "should warn about repeated registration")
 })

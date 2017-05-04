@@ -3,7 +3,7 @@ const test = require("ava")
 const createContainerModule = require("../container")
 
 const NOOP_STREAM = {write: () => {}}
-const {createContainer, define} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
 
 test("creation", t => {
   const container = createContainer()
@@ -12,10 +12,10 @@ test("creation", t => {
 })
 
 test("resolving instances from parent", t => {
-  const componentDefinition = define({
-    name: "test-component",
+  const componentDefinition = {
+    identifier: "test-component",
     factory: () => "test-component-instance",
-  })
+  }
 
   const parent = createContainer()
   parent.register(componentDefinition)
@@ -26,10 +26,10 @@ test("resolving instances from parent", t => {
 })
 
 test("registering definitions", t => {
-  const componentDefinition = define({
-    name: "test-component",
+  const componentDefinition = {
+    identifier: "test-component",
     factory: () => "test-component-instance",
-  })
+  }
 
   const parent = createContainer()
   const child = parent.child("child")

@@ -5,11 +5,11 @@ const createStreamMock = require("../__mocks__/stream")
 const createContainerModule = require("../container")
 
 const NOOP_STREAM = {write: () => {}}
-const {createContainer, define} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
 
 test("single dependency", t => {
-  const componentDefinition = define({
-    name: "test-component",
+  const componentDefinition = {
+    identifier: "test-component",
     inject: ["dependency"],
     factory: ({dependency}) => {
       return {
@@ -18,12 +18,12 @@ test("single dependency", t => {
         },
       }
     },
-  })
+  }
 
-  const dependencyDefinition = define({
-    name: "dependency",
+  const dependencyDefinition = {
+    identifier: "dependency",
     factory: () => "dependency-instance",
-  })
+  }
 
   const container = createContainer()
   container.register(componentDefinition)
@@ -35,8 +35,8 @@ test("single dependency", t => {
 })
 
 test("resolving unknown dependencies", t => {
-  const componentDefinition = define({
-    name: "test-component",
+  const componentDefinition = {
+    identifier: "test-component",
     inject: ["dependency"],
     factory: ({dependency}) => {
       return {
@@ -45,7 +45,7 @@ test("resolving unknown dependencies", t => {
         },
       }
     },
-  })
+  }
 
   const container = createContainer()
   container.register(componentDefinition)
@@ -60,10 +60,10 @@ test("warning about unknown dependencies", t => {
     streamMock,
     writeSpy: stdioSpy,
   } = createStreamMock(sinon)
-  const {createContainer, define} = createContainerModule({stdio: streamMock})
+  const {createContainer} = createContainerModule({stdio: streamMock})
 
-  const componentDefinition = define({
-    name: "test-component",
+  const componentDefinition = {
+    identifier: "test-component",
     inject: ["dependency"],
     factory: ({dependency}) => {
       return {
@@ -72,7 +72,7 @@ test("warning about unknown dependencies", t => {
         },
       }
     },
-  })
+  }
 
   const container = createContainer()
   container.register(componentDefinition)

@@ -3,14 +3,14 @@ const test = require("ava")
 const createContainerModule = require("../container")
 
 const NOOP_STREAM = {write: () => {}}
-const {createContainer, define} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
 
 test("multiple calls to get", t => {
   let instances = 0
-  const instanceCounterDef = define({
-    name: "instance-counter",
+  const instanceCounterDef = {
+    identifier: "instance-counter",
     factory: () => ++instances,
-  })
+  }
 
   const container = createContainer()
   container.register(instanceCounterDef)

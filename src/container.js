@@ -3,7 +3,7 @@ module.exports = ({
   stdio,
 }) => {
   function _createContainer({
-    // context,
+    // scope,
     parent,
     registry,
   }) {
@@ -11,41 +11,45 @@ module.exports = ({
 
     const container =  {
       register(definition) {
-        const name = definition.name
-        if (registry[name]) {
-          stdio.write(`Overwriting ${name}`)
+        const {identifier} = definition
+        if (!identifier) {
+          throw new Error(`Cannot register without an identifier. Found keys: ${Object.keys(definition)}`)
         }
-        registry[name] = definition
+        if (registry[identifier]) {
+          stdio.write(`Overwriting ${identifier}`)
+        }
+        registry[identifier] = definition
       },
-      get(name) {
-        const instance = instances[name]
+
+      get(identifier) {
+        const instance = instances[identifier]
         if (instance) {
           return instance
         }
 
-        const definition = registry[name]
+        const definition = registry[identifier]
         if (!definition) {
           if (parent) {
-            return parent.get(name)
+            return parent.get(identifier)
           }
-          stdio.write(`Nothing registered for name: ${name}`)
+          stdio.write(`Nothing registered for identifier: ${identifier}`)
           return undefined
         }
 
         const deps = {}
         const dependencyNames = definition.inject
-        dependencyNames && dependencyNames.forEach((name) => deps[name] = container.get(name))
+        dependencyNames && dependencyNames.forEach((identifier) => deps[identifier] = container.get(identifier))
 
         const factory = definition.factory
         const newInstance = factory(deps)
-        instances[name] = newInstance
+        instances[identifier] = newInstance
         return newInstance
       },
 
-      child(context) {
-        // TODO check context !== global
+      child(scope) {
+        // TODO check scope !== global
         return _createContainer({
-          context,
+          scope,
           parent: container,
           registry: {},
         })
@@ -56,21 +60,13 @@ module.exports = ({
 
   function createGlobalContainer() {
     return _createContainer({
-      context: "global",
+      scope: "global",
       parent: undefined,
       registry: {},
     })
   }
 
-  function define(definition) {
-    if (!definition.name) {
-      throw new Error("Definition must contain a name")
-    }
-    return definition
-  }
-
   return {
     createContainer: createGlobalContainer,
-    define,
   }
 }
