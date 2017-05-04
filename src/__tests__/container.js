@@ -5,7 +5,7 @@ const createStreamMock = require("../__mocks__/stream")
 const createContainerModule = require("../container")
 
 const NOOP_STREAM = {write: () => {}}
-const {createContainer, inject} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer, define} = createContainerModule({stdio: NOOP_STREAM})
 
 test("create", t => {
   const container = createContainer()
@@ -13,50 +13,71 @@ test("create", t => {
 })
 
 test("registering a component factory", t => {
+  const componentDefinition = define({
+    name: "test-component",
+    factory: () => "test-component-instance",
+  })
+
   const container = createContainer()
   t.notThrows(() => {
-    container.register("test-component", () => "test-component-instance")
+    container.register(componentDefinition)
   }, "should accept a registration")
 })
 
-test("registering a single key twice", t => {
+test("registering a component name twice", t => {
   const {
     streamMock,
     writeSpy: stdioSpy,
   } = createStreamMock(sinon)
   const {createContainer} = createContainerModule({stdio: streamMock})
 
-  const container = createContainer()
+  const componentDefinition = define({
+    name: "unique-component-name",
+    factory: () => "test-component-instance",
+  })
 
-  container.register("unique-component-name", () => 1)
-  container.register("unique-component-name", () => 2)
+  const container = createContainer()
+  container.register(componentDefinition)
+  container.register(componentDefinition)
 
   t.true(stdioSpy.called, "should emit a warning log")
   const output = stdioSpy.firstCall.args[0]
-  t.true(output.includes("unique-component-name"), "should output a warning repeated registration")
+  t.true(output.includes("unique-component-name"), "should warn about repeated registration")
 })
 
 test("getting a component instance", t => {
+  const componentDefinition = define({
+    name: "test-component",
+    factory: () => "test-component-instance",
+  })
+
   const container = createContainer()
-  container.register("test-component", () => "test-component-instance")
+  container.register(componentDefinition)
   const instance = container.get("test-component")
   t.is(instance, "test-component-instance", "should return the instance created by the factory")
 })
 
 test("injecting a dependency", t => {
-  const container = createContainer()
-
-  const testComponent = inject(["dependency"])(
-    function({dependency}) {
+  const componentDefinition = define({
+    name: "test-component",
+    inject: ["dependency"],
+    factory: ({dependency}) => {
       return {
         getInjectedDependency() {
           return dependency
         },
       }
-    })
+    },
+  })
 
-  container.register("dependency", () => "dependency-instance")
-  container.register("test-component", testComponent)
+  const dependencyDefinition = define({
+    name: "dependency",
+    factory: () => "dependency-instance",
+  })
+
+  const container = createContainer()
+  container.register(componentDefinition)
+  container.register(dependencyDefinition)
 
   const component = container.get("test-component")
   const dep = component.getInjectedDependency()
@@ -64,29 +85,36 @@ test("injecting a dependency", t => {
 })
 
 test("instance caching", t => {
-  const container = createContainer()
-
   let instances = 0
-  container.register("instance-counter", () => ++instances)
+  const instanceCounterDef = define({
+    name: "instance-counter",
+    factory: () => ++instances,
+  })
 
+  const container = createContainer()
+  container.register(instanceCounterDef)
+
+  container.get("instance-counter")
   container.get("instance-counter")
   const instanceCount = container.get("instance-counter")
   t.is(instanceCount, 1, "should only create one instance for multiple calls to 'get'")
 })
 
 test("resolving unknown dependencies", t => {
-  const container = createContainer()
-
-  const testComponent = inject(["dependency"])(
-    function({dependency}) {
+  const componentDefinition = define({
+    name: "test-component",
+    inject: ["dependency"],
+    factory: ({dependency}) => {
       return {
         getInjectedDependency() {
           return dependency
         },
       }
-    })
+    },
+  })
 
-  container.register("test-component", testComponent)
+  const container = createContainer()
+  container.register(componentDefinition)
 
   const component = container.get("test-component")
   const dep = component.getInjectedDependency()
@@ -98,20 +126,22 @@ test("warning about unknown dependencies", t => {
     streamMock,
     writeSpy: stdioSpy,
   } = createStreamMock(sinon)
-  const {createContainer, inject} = createContainerModule({stdio: streamMock})
+  const {createContainer, define} = createContainerModule({stdio: streamMock})
 
-  const container = createContainer()
-
-  const testComponent = inject(["dependency"])(
-    function({dependency}) {
+  const componentDefinition = define({
+    name: "test-component",
+    inject: ["dependency"],
+    factory: ({dependency}) => {
       return {
         getInjectedDependency() {
           return dependency
         },
       }
-    })
+    },
+  })
 
-  container.register("test-component", testComponent)
+  const container = createContainer()
+  container.register(componentDefinition)
   container.get("test-component")
 
   t.true(stdioSpy.called, "should emit a warning log")
@@ -126,9 +156,13 @@ test("creating a child container", t => {
 })
 
 test("resolving instances from parent container", t => {
-  const parent = createContainer()
-  parent.register("test-component", () => "test-component-instance")
+  const componentDefinition = define({
+    name: "test-component",
+    factory: () => "test-component-instance",
+  })
 
+  const parent = createContainer()
+  parent.register(componentDefinition)
   const child = parent.child("child")
   const instance = child.get("test-component")
 
@@ -136,10 +170,14 @@ test("resolving instances from parent container", t => {
 })
 
 test("registering factories with a child component", t => {
-  const parent = createContainer()
+  const componentDefinition = define({
+    name: "test-component",
+    factory: () => "test-component-instance",
+  })
 
+  const parent = createContainer()
   const child = parent.child("child")
-  child.register("test-component", () => "test-component-instance")
+  child.register(componentDefinition)
   const instance = parent.get("test-component")
 
   t.is(instance, undefined, "parent should not be able to access components registered with a child")

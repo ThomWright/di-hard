@@ -1,4 +1,3 @@
-const DEP_LIST_PROP_NAME = "__deps__"
 
 module.exports = ({
   stdio,
@@ -6,38 +5,40 @@ module.exports = ({
   function _createContainer({
     // context,
     parent,
-    factories,
+    registry,
   }) {
     const instances = {}
 
     const container =  {
-      register(key, factory) {
-        if (factories[key]) {
-          stdio.write(`Overwriting ${key}`)
+      register(definition) {
+        const name = definition.name
+        if (registry[name]) {
+          stdio.write(`Overwriting ${name}`)
         }
-        factories[key] = factory
+        registry[name] = definition
       },
-      get(key) {
-        const instance = instances[key]
+      get(name) {
+        const instance = instances[name]
         if (instance) {
           return instance
         }
 
-        const factory = factories[key]
-        if (!factory) {
+        const definition = registry[name]
+        if (!definition) {
           if (parent) {
-            return parent.get(key)
+            return parent.get(name)
           }
-          stdio.write(`Nothing registered for key: ${key}`)
+          stdio.write(`Nothing registered for name: ${name}`)
           return undefined
         }
 
         const deps = {}
-        const depList = factory[DEP_LIST_PROP_NAME]
-        depList && depList.forEach((key) => deps[key] = container.get(key))
+        const dependencyNames = definition.inject
+        dependencyNames && dependencyNames.forEach((name) => deps[name] = container.get(name))
 
+        const factory = definition.factory
         const newInstance = factory(deps)
-        instances[key] = newInstance
+        instances[name] = newInstance
         return newInstance
       },
 
@@ -46,7 +47,7 @@ module.exports = ({
         return _createContainer({
           context,
           parent: container,
-          factories: {},
+          registry: {},
         })
       },
     }
@@ -57,19 +58,19 @@ module.exports = ({
     return _createContainer({
       context: "global",
       parent: undefined,
-      factories: {},
+      registry: {},
     })
   }
 
-  function inject(depList) {
-    return (component) => {
-      component[DEP_LIST_PROP_NAME] = depList
-      return component
+  function define(definition) {
+    if (!definition.name) {
+      throw new Error("Definition must contain a name")
     }
+    return definition
   }
 
   return {
     createContainer: createGlobalContainer,
-    inject,
+    define,
   }
 }
