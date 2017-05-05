@@ -1,7 +1,7 @@
 const bluebird = require("bluebird")
 
 module.exports = ({
-  stdio,
+  // stdio,
 }) => {
   function _createContainer({
     scope,
@@ -10,7 +10,13 @@ module.exports = ({
   }) {
     const instances = {}
 
-    const private = {
+    const internal = {
+      searchPath() {
+        if (!parent) {
+          return [scope]
+        }
+        return [scope, ...parent.searchPath()]
+      },
       pathToScope(targetScope) {
         if (targetScope === scope) {
           return [scope]
@@ -24,39 +30,27 @@ module.exports = ({
         }
         return undefined
       },
-    }
 
-    const container =  {
-      register(definition) {
-        const {identifier} = definition
-        if (!identifier) {
-          throw new Error(`Cannot register without an identifier. Found keys: ${Object.keys(definition)}`)
-        }
-        if (registry[identifier]) {
-          stdio.write(`Overwriting ${identifier}`)
-        }
-        registry[identifier] = definition
-      },
-
-      get(identifier) {
-        const cachedInstance = instances[identifier]
+      _get(id) {
+        const cachedInstance = instances[id]
         if (cachedInstance) {
           return Promise.resolve(cachedInstance)
         }
 
-        const definition = registry[identifier]
+        const definition = registry[id]
         if (!definition) {
           if (parent) {
-            return parent.get(identifier)
+            return parent._get(id)
           }
-          stdio.write(`Nothing registered for identifier: ${identifier}`)
-          return Promise.resolve()
+          return Promise.reject(new Error(
+            `Nothing registered for id: ${id}`
+          ))
         }
 
         const promisesForDeps = {}
         const dependencyNames = definition.inject
         dependencyNames && dependencyNames.forEach(
-          (identifier) => promisesForDeps[identifier] = container.get(identifier)
+          (id) => promisesForDeps[id] = internal._get(id)
         )
 
         const factory = definition.factory
@@ -66,13 +60,34 @@ module.exports = ({
             return factory(resolvedDeps)
           })
           .then((newInstance) => {
-            instances[identifier] = newInstance
+            instances[id] = newInstance
             return newInstance
+          })
+      },
+    }
+
+    return {
+      register(definition) {
+        const {id} = definition
+        if (!id) {
+          throw new Error(`Cannot register without an id. Found keys: ${Object.keys(definition)}`)
+        }
+        if (registry[id]) {
+          throw new Error(`Overwriting ${id}`)
+        }
+        registry[id] = definition
+      },
+
+      get(id) {
+        return internal._get(id)
+          .catch((error) => {
+            error.searchPath = internal.searchPath().join("->")
+            throw error
           })
       },
 
       child(scope) {
-        const path = private.pathToScope(scope)
+        const path = internal.pathToScope(scope)
         if (path) {
           const pathString = path.join("->")
           throw new Error(
@@ -81,12 +96,11 @@ module.exports = ({
         }
         return _createContainer({
           scope,
-          parent: Object.assign({}, container, private),
+          parent: internal,
           registry: {},
         })
       },
     }
-    return container
   }
 
   function createContainer(scopeName) {

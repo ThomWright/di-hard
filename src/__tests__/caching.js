@@ -5,38 +5,33 @@ const createContainerModule = require("../container")
 const NOOP_STREAM = {write: () => {}}
 const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
 
-test("multiple calls to get", t => {
+test("multiple calls to get", async t => {
   let instances = 0
   const instanceCounterDef = {
-    identifier: "instance-counter",
+    id: "instanceCounter",
     factory: () => ++instances,
   }
 
   const container = createContainer("root")
   container.register(instanceCounterDef)
 
-  return container.get("instance-counter")
-    .then(() => container.get("instance-counter"))
-    .then(() => container.get("instance-counter"))
-    .then((instanceCount) => {
-      t.is(instanceCount, 1, "should only create one instance for multiple calls to 'get'")
-    })
+  await container.get("instanceCounter")
+  await container.get("instanceCounter")
+  const instanceCount = await container.get("instanceCounter")
+  t.is(instanceCount, 1, "should only create one instance for multiple calls to 'get'")
 })
 
-test("return value for cached instance", t => {
+test("return value for cached instance", async t => {
   let instances = 0
   const instanceCounterDef = {
-    identifier: "instance-counter",
+    id: "instanceCounter",
     factory: () => ++instances,
   }
 
   const container = createContainer("root")
   container.register(instanceCounterDef)
 
-  return container.get("instance-counter")
-    .then(() => {
-      const promise = container.get("test-component")
-
-      t.is(typeof promise.then, "function", "should be a promise")
-    })
+  await container.get("instanceCounter")
+  const promise = container.get("instanceCounter")
+  t.is(typeof promise.then, "function", "should be a promise")
 })

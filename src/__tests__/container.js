@@ -10,30 +10,28 @@ test("create", t => {
   t.is(typeof container, "object", "should create an object")
 })
 
-test("getting a component instance", t => {
+test("getting a component instance", async t => {
   const componentDefinition = {
-    identifier: "test-component",
-    factory: () => "test-component-instance",
+    id: "testComponent",
+    factory: () => "testComponentInstance",
   }
 
   const container = createContainer("root")
   container.register(componentDefinition)
 
-  return container.get("test-component")
-    .then((instance) => {
-      t.is(instance, "test-component-instance", "should return the instance created by the factory")
-    })
+  const instance = await container.get("testComponent")
+  t.is(instance, "testComponentInstance", "should return the instance created by the factory")
 })
 
 test("return value", t => {
   const componentDefinition = {
-    identifier: "test-component",
-    factory: () => "test-component-instance",
+    id: "testComponent",
+    factory: () => "testComponentInstance",
   }
 
   const container = createContainer("root")
   container.register(componentDefinition)
-  const promise = container.get("test-component")
+  const promise = container.get("testComponent")
 
   t.is(typeof promise.then, "function", "should be a promise")
 })
