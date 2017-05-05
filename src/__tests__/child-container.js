@@ -48,7 +48,7 @@ test("with same name as parent", t => {
   const parent = createContainer("root")
   const child = parent.child("second")
   const error = t.throws(() => child.child("root"), Error)
-  t.regex(error.message, /second->root/, "should show hierarchy in error message")
+  t.regex(error.message, /second>root/, "should show hierarchy in error message")
 })
 
 test("unknown id", async t => {
@@ -59,7 +59,7 @@ test("unknown id", async t => {
   const promise = container.get("notThere")
   const error = await t.throws(promise, Error, "should throw when requesting an unknown id")
   t.regex(error.message, /notThere/, "should specify unknown id")
-  t.regex(error.searchPath, /low->mid->high/, "should specify search path")
+  t.regex(error.searchPath, /low>mid>high/, "should specify search path")
 })
 
 test("unknown dependency id", async t => {
@@ -83,5 +83,5 @@ test("unknown dependency id", async t => {
   const promise = container.get("testComponent")
   const error = await t.throws(promise, Error, "should throw when requesting to inject unknown id")
   t.regex(error.message, /dependencyName/, "should specify unknown id")
-  t.regex(error.searchPath, /low->mid->high/, "should specify search path")
+  t.regex(error.searchPath, /low>mid>high/, "should specify search path")
 })

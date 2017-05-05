@@ -31,7 +31,12 @@ module.exports = ({
         return undefined
       },
 
-      _get(id) {
+      _get(id, seen = []) {
+        if (seen.includes(id)) {
+          const error = new Error("Circular dependencies")
+          error.dependencyDiagram = [...seen, id].join(">")
+          return Promise.reject(error)
+        }
         const cachedInstance = instances[id]
         if (cachedInstance) {
           return Promise.resolve(cachedInstance)
@@ -40,7 +45,7 @@ module.exports = ({
         const definition = registry[id]
         if (!definition) {
           if (parent) {
-            return parent._get(id)
+            return parent._get(id, seen)
           }
           return Promise.reject(new Error(
             `Nothing registered for id: ${id}`
@@ -50,7 +55,7 @@ module.exports = ({
         const promisesForDeps = {}
         const dependencyNames = definition.inject
         dependencyNames && dependencyNames.forEach(
-          (id) => promisesForDeps[id] = internal._get(id)
+          (depId) => promisesForDeps[depId] = internal._get(depId, [...seen, id])
         )
 
         const factory = definition.factory
@@ -84,7 +89,7 @@ module.exports = ({
       get(id) {
         return internal._get(id)
           .catch((error) => {
-            error.searchPath = internal.searchPath().join("->")
+            error.searchPath = internal.searchPath().join(">")
             throw error
           })
       },
@@ -92,7 +97,7 @@ module.exports = ({
       child(scope) {
         const path = internal.pathToScope(scope)
         if (path) {
-          const pathString = path.join("->")
+          const pathString = path.join(">")
           throw new Error(
             `Cannot use scope name '${scope}': parent container named '${scope}' already exists: ${pathString}`
           )
