@@ -55,14 +55,17 @@ module.exports = ({
 
         const factory = definition.factory
 
-        return bluebird.props(promisesForDeps)
+        const promiseForInstance = bluebird.props(promisesForDeps)
           .then((resolvedDeps) => {
             return factory(resolvedDeps)
           })
           .then((newInstance) => {
-            instances[id] = newInstance
             return newInstance
           })
+
+        instances[id] = promiseForInstance
+
+        return promiseForInstance
       },
     }
 
