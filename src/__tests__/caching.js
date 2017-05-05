@@ -12,7 +12,7 @@ test("multiple calls to get", t => {
     factory: () => ++instances,
   }
 
-  const container = createContainer()
+  const container = createContainer("root")
   container.register(instanceCounterDef)
 
   return container.get("instance-counter")
@@ -30,7 +30,7 @@ test("return value for cached instance", t => {
     factory: () => ++instances,
   }
 
-  const container = createContainer()
+  const container = createContainer("root")
   container.register(instanceCounterDef)
 
   return container.get("instance-counter")

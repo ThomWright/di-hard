@@ -4,11 +4,27 @@ module.exports = ({
   stdio,
 }) => {
   function _createContainer({
-    // scope,
+    scope,
     parent,
     registry,
   }) {
     const instances = {}
+
+    const private = {
+      pathToScope(targetScope) {
+        if (targetScope === scope) {
+          return [scope]
+        }
+        if (!parent) {
+          return undefined
+        }
+        const parentScopes = parent.pathToScope(targetScope)
+        if (parentScopes) {
+          return [scope, ...parentScopes]
+        }
+        return undefined
+      },
+    }
 
     const container =  {
       register(definition) {
@@ -56,10 +72,16 @@ module.exports = ({
       },
 
       child(scope) {
-        // TODO check scope !== global
+        const path = private.pathToScope(scope)
+        if (path) {
+          const pathString = path.join("->")
+          throw new Error(
+            `Cannot use scope name '${scope}': parent container named '${scope}' already exists: ${pathString}`
+          )
+        }
         return _createContainer({
           scope,
-          parent: container,
+          parent: Object.assign({}, container, private),
           registry: {},
         })
       },
@@ -67,15 +89,15 @@ module.exports = ({
     return container
   }
 
-  function createGlobalContainer() {
+  function createContainer(scopeName) {
     return _createContainer({
-      scope: "global",
+      scope: scopeName,
       parent: undefined,
       registry: {},
     })
   }
 
   return {
-    createContainer: createGlobalContainer,
+    createContainer,
   }
 }

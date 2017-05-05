@@ -13,7 +13,7 @@ test("valid definition", t => {
     factory: () => "test-component-instance",
   }
 
-  const container = createContainer()
+  const container = createContainer("root")
   t.notThrows(() => {
     container.register(componentDefinition)
   }, "should accept a registration")
@@ -25,7 +25,7 @@ test("definition with no identifier", t => {
     factory: () => "test-component-instance",
   }
 
-  const container = createContainer()
+  const container = createContainer("root")
   const error = t.throws(() => {
     container.register(componentDefinition)
   }, Error)
@@ -45,7 +45,7 @@ test("same name twice", t => {
     factory: () => "test-component-instance",
   }
 
-  const container = createContainer()
+  const container = createContainer("root")
   container.register(componentDefinition)
   container.register(componentDefinition)
 

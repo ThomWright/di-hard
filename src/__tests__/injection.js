@@ -25,7 +25,7 @@ test("single dependency", t => {
     factory: () => "dependency-instance",
   }
 
-  const container = createContainer()
+  const container = createContainer("root")
   container.register(componentDefinition)
   container.register(dependencyDefinition)
 
@@ -54,7 +54,7 @@ test("promise-resolved dependency", t => {
     factory: () => Promise.resolve("dependency-instance"),
   }
 
-  const container = createContainer()
+  const container = createContainer("root")
   container.register(componentDefinition)
   container.register(dependencyDefinition)
 
@@ -78,7 +78,7 @@ test("resolving unknown dependencies", t => {
     },
   }
 
-  const container = createContainer()
+  const container = createContainer("root")
   container.register(componentDefinition)
 
   return container.get("test-component")
@@ -107,7 +107,7 @@ test("warning about unknown dependencies", t => {
     },
   }
 
-  const container = createContainer()
+  const container = createContainer("root")
   container.register(componentDefinition)
 
   return container.get("test-component")
