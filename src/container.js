@@ -1,3 +1,4 @@
+const bluebird = require("bluebird")
 
 module.exports = ({
   stdio,
@@ -22,9 +23,9 @@ module.exports = ({
       },
 
       get(identifier) {
-        const instance = instances[identifier]
-        if (instance) {
-          return instance
+        const cachedInstance = instances[identifier]
+        if (cachedInstance) {
+          return Promise.resolve(cachedInstance)
         }
 
         const definition = registry[identifier]
@@ -33,17 +34,25 @@ module.exports = ({
             return parent.get(identifier)
           }
           stdio.write(`Nothing registered for identifier: ${identifier}`)
-          return undefined
+          return Promise.resolve()
         }
 
-        const deps = {}
+        const promisesForDeps = {}
         const dependencyNames = definition.inject
-        dependencyNames && dependencyNames.forEach((identifier) => deps[identifier] = container.get(identifier))
+        dependencyNames && dependencyNames.forEach(
+          (identifier) => promisesForDeps[identifier] = container.get(identifier)
+        )
 
         const factory = definition.factory
-        const newInstance = factory(deps)
-        instances[identifier] = newInstance
-        return newInstance
+
+        return bluebird.props(promisesForDeps)
+          .then((resolvedDeps) => {
+            return factory(resolvedDeps)
+          })
+          .then((newInstance) => {
+            instances[identifier] = newInstance
+            return newInstance
+          })
       },
 
       child(scope) {

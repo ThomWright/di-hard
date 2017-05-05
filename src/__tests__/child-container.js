@@ -20,9 +20,10 @@ test("resolving instances from parent", t => {
   const parent = createContainer()
   parent.register(componentDefinition)
   const child = parent.child("child")
-  const instance = child.get("test-component")
-
-  t.is(instance, "test-component-instance", "children should be able to access components registered with the parent")
+  return child.get("test-component")
+    .then((instance) => {
+      t.is(instance, "test-component-instance", "children should be able to access components registered with the parent")
+    })
 })
 
 test("registering definitions", t => {
@@ -34,7 +35,8 @@ test("registering definitions", t => {
   const parent = createContainer()
   const child = parent.child("child")
   child.register(componentDefinition)
-  const instance = parent.get("test-component")
-
-  t.is(instance, undefined, "parent should not be able to access components registered with a child")
+  return parent.get("test-component")
+    .then((instance) => {
+      t.is(instance, undefined, "parent should not be able to access components registered with a child")
+    })
 })

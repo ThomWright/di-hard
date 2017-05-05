@@ -18,6 +18,22 @@ test("getting a component instance", t => {
 
   const container = createContainer()
   container.register(componentDefinition)
-  const instance = container.get("test-component")
-  t.is(instance, "test-component-instance", "should return the instance created by the factory")
+
+  return container.get("test-component")
+    .then((instance) => {
+      t.is(instance, "test-component-instance", "should return the instance created by the factory")
+    })
+})
+
+test("return value", t => {
+  const componentDefinition = {
+    identifier: "test-component",
+    factory: () => "test-component-instance",
+  }
+
+  const container = createContainer()
+  container.register(componentDefinition)
+  const promise = container.get("test-component")
+
+  t.is(typeof promise.then, "function", "should be a promise")
 })

@@ -24,6 +24,7 @@
     "prepush": "npm test"
   },
   "dependencies": {
+    "bluebird": "^3.5.0"
   },
   "devDependencies": {
     "@mft/eslint-config-momentumft": "^2.1.2",
