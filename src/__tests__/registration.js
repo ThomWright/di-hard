@@ -87,3 +87,14 @@ test("factory with same name as value of 'undefined'", t => {
 
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
 })
+
+test("chaining", t => {
+
+  t.notThrows(
+    () => createContainer("root")
+      .registerFactory("f", () => {})
+      .registerValue("a", "a")
+      .registerValue("b", "b"),
+    "should not throw when chaining registations"
+  )
+})

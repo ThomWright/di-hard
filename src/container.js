@@ -96,7 +96,7 @@ module.exports = () => {
       },
     }
 
-    return {
+    const api = {
       registerFactory(id, factory, lifetime) {
         if (typeof factory !== "function") {
           throw new Error(`Can't register '${id}' as a factory - it is not a function`)
@@ -114,6 +114,8 @@ module.exports = () => {
           lifetime = lifetimes.TRANSIENT
         }
         registry[id] = {factory, lifetime}
+
+        return api
       },
 
       registerValue(id, value) {
@@ -124,6 +126,8 @@ module.exports = () => {
           throw new Error(`Cannot register '${id}' - already registered as a value`)
         }
         instances[id] = value
+
+        return api
       },
 
       resolve(id) {
@@ -147,6 +151,7 @@ module.exports = () => {
         })
       },
     }
+    return api
   }
 
   function createContainer(scope) {
