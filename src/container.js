@@ -8,16 +8,18 @@ module.exports = () => {
     const instances = {}
     const registry = {}
 
-    function createResolver(dependencyPath) {
+    function createResolver({
+      previousDependencyPath = [],
+      previouslySearchedScopes = [],
+    }) {
       return new Proxy({}, {
         get(target, name) {
           const id = name
 
           // check for circular dependencies
-          if (dependencyPath.includes(id)) {
-            const error = new Error("Circular dependencies")
-            error.dependencyDiagram = [...dependencyPath, id].join(" -> ")
-            throw error
+          const dependencyPath = [...previousDependencyPath, {id, scope}]
+          if (previousDependencyPath.find(sameIdAndScope({id, scope}))) {
+            throw new Error(`Circular dependencies: '${formatDepPath(dependencyPath)}'`)
           }
 
           // return an existing instance from this scope if we have one
@@ -29,19 +31,26 @@ module.exports = () => {
           // try to create a new instance
           const registration = registry[id]
           if (!registration) {
+            const searchedScopes = [...previouslySearchedScopes, scope]
             if (parent) {
               // if we can't do it in this scope, see if a parent can
-              return parent.resolve(id)
+              return parent.resolve(
+                id,
+                previousDependencyPath,
+                searchedScopes
+              )
             }
             throw new Error(
-              `Nothing registered for id: ${id}`
+              `Nothing registered for ID '${id}' in scopes: '${searchedScopes.join(" -> ")}'.` +
+              ` Trying to resolve: '${formatDepPath(dependencyPath)}'.`
             )
           }
 
           // create a new instance
           const {factory, lifetime} = registration
-          const dependencyPathToThisInstance = [...dependencyPath, id]
-          const resolver = createResolver(dependencyPathToThisInstance)
+          const resolver = createResolver({
+            previousDependencyPath: dependencyPath,
+          })
           const instance = factory(resolver)
 
           if (lifetime !== lifetimes.TRANSIENT) {
@@ -59,16 +68,19 @@ module.exports = () => {
     }
 
     const internal = {
-      resolve(id) {
-        return createResolver([])[id]
+      resolve(id, previousDependencyPath = [], previouslySearchedScopes = []) {
+        return createResolver({previousDependencyPath, previouslySearchedScopes})[id]
       },
 
-      searchPath() {
+      // return the list of visible scopes, in order of traversal
+      visibleScopes() {
         if (!parent) {
           return [scope]
         }
-        return [scope, ...parent.searchPath()]
+        return [scope, ...parent.visibleScopes()]
       },
+
+      // return the path from this scope to targetScope, or undefined if targetScope is not visible
       pathToScope(targetScope) {
         if (targetScope === scope) {
           return [scope]
@@ -115,15 +127,11 @@ module.exports = () => {
       },
 
       resolve(id) {
-        try {
-          return internal.resolve(id)
-        } catch (error) {
-          error.searchPath = `${internal.searchPath().join(" -> ")} (root)`
-          throw error
-        }
+        return internal.resolve(id)
       },
 
       child(scope) {
+        // TODO insist on scope name
         const path = internal.pathToScope(scope)
         if (path) {
           const pathString = path.join(" -> ")
@@ -140,6 +148,7 @@ module.exports = () => {
   }
 
   function createContainer(scope) {
+    // TODO insist on scope name
     return _createContainer({
       scope,
       parent: undefined,
@@ -148,5 +157,16 @@ module.exports = () => {
 
   return {
     createContainer,
+  }
+}
+
+function formatDepPath(dependencyPath) {
+  return dependencyPath.map(d => `${d.id} (${d.scope})`).join(" -> ")
+}
+
+function sameIdAndScope({id, scope}) {
+  return (other) => {
+    return other.id === id
+      && other.scope === scope
   }
 }
