@@ -118,6 +118,11 @@ module.exports = () => {
         return api
       },
 
+      registerValues(values) {
+        Object.keys(values).forEach((id) => api.registerValue(id, values[id]))
+        return api
+      },
+
       registerValue(id, value) {
         if (registry.hasOwnProperty(id)) {
           throw new Error(`Cannot register '${id}' - already registered`)

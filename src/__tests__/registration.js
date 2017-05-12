@@ -89,12 +89,23 @@ test("factory with same name as value of 'undefined'", t => {
 })
 
 test("chaining", t => {
-
   t.notThrows(
     () => createContainer("root")
       .registerFactory("f", () => {})
       .registerValue("a", "a")
+      .registerValues({c: "c"})
       .registerValue("b", "b"),
     "should not throw when chaining registations"
   )
+})
+
+test("multiple values", t => {
+  const container = createContainer("root")
+  container.registerValues({
+    v1: "v1",
+    v2: "v2",
+  })
+
+  t.is(container.resolve("v1"), "v1")
+  t.is(container.resolve("v2"), "v2")
 })
