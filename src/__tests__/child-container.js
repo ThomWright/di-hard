@@ -11,33 +11,22 @@ test("creation", t => {
   t.is(typeof child, "object", "should create a child container")
 })
 
-test("resolving instances from parent", async t => {
-  const componentDefinition = {
-    id: "testComponent",
-    factory: () => "testComponentInstance",
-  }
-
+test("resolving instances from parent", t => {
   const parent = createContainer("root")
-  parent.register(componentDefinition)
+  parent.register("testComponent", () => "testComponentInstance")
   const child = parent.child("child")
 
-  const instance = await child.get("testComponent")
+  const instance = child.resolve("testComponent")
   t.is(instance, "testComponentInstance", "children should be able to access components registered with the parent")
 })
 
-test("registering definitions", async t => {
-  const componentDefinition = {
-    id: "testComponent",
-    factory: () => "testComponentInstance",
-  }
-
+test("registering definitions", t => {
   const parent = createContainer("root")
   const child = parent.child("child")
-  child.register(componentDefinition)
+  child.register("testComponent", () => "testComponentInstance")
 
-  const promise = parent.get("testComponent")
-  const error = await t.throws(
-    promise,
+  const error = t.throws(
+    () => parent.resolve("testComponent"),
     Error,
     "parent should not be able to access components registered with a child"
   )
@@ -48,40 +37,42 @@ test("with same name as parent", t => {
   const parent = createContainer("root")
   const child = parent.child("second")
   const error = t.throws(() => child.child("root"), Error)
-  t.regex(error.message, /second>root/, "should show hierarchy in error message")
+  t.regex(error.message, /second -> root/, "should show hierarchy in error message")
 })
 
-test("unknown id", async t => {
+test("unknown id", t => {
   const container = createContainer("high")
     .child("mid")
     .child("low")
 
-  const promise = container.get("notThere")
-  const error = await t.throws(promise, Error, "should throw when requesting an unknown id")
+  const error = t.throws(
+    () => container.resolve("notThere"),
+    Error,
+    "should throw when requesting an unknown id"
+  )
   t.regex(error.message, /notThere/, "should specify unknown id")
-  t.regex(error.searchPath, /low>mid>high/, "should specify search path")
+  t.regex(error.searchPath, /low -> mid -> high \(root\)/, "should specify search path")
 })
 
-test("unknown dependency id", async t => {
-  const componentDefinition = {
-    id: "testComponent",
-    inject: ["dependencyName"],
-    factory: ({dependency}) => {
-      return {
-        getInjectedDependency() {
-          return dependency
-        },
-      }
-    },
+test("unknown dependency id", t => {
+  const factory = ({dependencyName}) => {
+    return {
+      getInjectedDependency() {
+        return dependencyName
+      },
+    }
   }
 
   const container = createContainer("high")
     .child("mid")
     .child("low")
-  container.register(componentDefinition)
+  container.register("testComponent", factory)
 
-  const promise = container.get("testComponent")
-  const error = await t.throws(promise, Error, "should throw when requesting to inject unknown id")
+  const error = t.throws(
+    () => container.resolve("testComponent"),
+    Error,
+    "should throw when requesting to inject unknown id"
+  )
   t.regex(error.message, /dependencyName/, "should specify unknown id")
-  t.regex(error.searchPath, /low>mid>high/, "should specify search path")
+  t.regex(error.searchPath, /low -> mid -> high \(root\)/, "should specify search path")
 })

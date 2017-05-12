@@ -1,16 +1,59 @@
-const bluebird = require("bluebird")
-
-module.exports = ({
-  // stdio,
-}) => {
+module.exports = () => {
   function _createContainer({
     scope,
     parent,
-    registry,
   }) {
     const instances = {}
+    const registry = {}
+
+    function createResolver(dependencyPath) {
+      return new Proxy({}, {
+        get(target, name) {
+          const id = name
+
+          // check for circular dependencies
+          if (dependencyPath.includes(id)) {
+            const error = new Error("Circular dependencies")
+            error.dependencyDiagram = [...dependencyPath, id].join(" -> ")
+            throw error
+          }
+
+          // return an existing instance from this scope if we have one
+          const cachedInstance = instances[id]
+          if (cachedInstance) {
+            return cachedInstance
+          }
+
+          // try to create a new instance
+          const factory = registry[id]
+          if (!factory) {
+            if (parent) {
+              // if we can't do it in this scope, see if a parent can
+              return parent.resolve(id)
+            }
+            throw new Error(
+              `Nothing registered for id: ${id}`
+            )
+          }
+
+          const dependencyPathToThisInstance = [...dependencyPath, id]
+          const resolver = createResolver(dependencyPathToThisInstance)
+          const instance = factory(resolver)
+          instances[id] = instance
+          return instance
+        },
+
+        set(target, name, value) {
+          throw new Error(`Can't set values on the resolver. Attempted to set '${name}' to '${value}'.`)
+        },
+      })
+    }
 
     const internal = {
+      resolve(id) {
+        return createResolver([])[id]
+      },
+
       searchPath() {
         if (!parent) {
           return [scope]
@@ -30,74 +73,29 @@ module.exports = ({
         }
         return undefined
       },
-
-      _get(id, seen = []) {
-        if (seen.includes(id)) {
-          const error = new Error("Circular dependencies")
-          error.dependencyDiagram = [...seen, id].join(">")
-          return Promise.reject(error)
-        }
-        const cachedInstance = instances[id]
-        if (cachedInstance) {
-          return Promise.resolve(cachedInstance)
-        }
-
-        const definition = registry[id]
-        if (!definition) {
-          if (parent) {
-            return parent._get(id, seen)
-          }
-          return Promise.reject(new Error(
-            `Nothing registered for id: ${id}`
-          ))
-        }
-
-        const promisesForDeps = {}
-        const dependencyNames = definition.inject
-        dependencyNames && dependencyNames.forEach(
-          (depId) => promisesForDeps[depId] = internal._get(depId, [...seen, id])
-        )
-
-        const factory = definition.factory
-
-        const promiseForInstance = bluebird.props(promisesForDeps)
-          .then((resolvedDeps) => {
-            return factory(resolvedDeps)
-          })
-          .then((newInstance) => {
-            return newInstance
-          })
-
-        instances[id] = promiseForInstance
-
-        return promiseForInstance
-      },
     }
 
     return {
-      register(definition) {
-        const {id} = definition
-        if (!id) {
-          throw new Error(`Cannot register without an id. Found keys: ${Object.keys(definition)}`)
-        }
+      register(id, factory) {
         if (registry[id]) {
           throw new Error(`Overwriting ${id}`)
         }
-        registry[id] = definition
+        registry[id] = factory
       },
 
-      get(id) {
-        return internal._get(id)
-          .catch((error) => {
-            error.searchPath = internal.searchPath().join(">")
-            throw error
-          })
+      resolve(id) {
+        try {
+          return internal.resolve(id)
+        } catch (error) {
+          error.searchPath = `${internal.searchPath().join(" -> ")} (root)`
+          throw error
+        }
       },
 
       child(scope) {
         const path = internal.pathToScope(scope)
         if (path) {
-          const pathString = path.join(">")
+          const pathString = path.join(" -> ")
           throw new Error(
             `Cannot use scope name '${scope}': parent container named '${scope}' already exists: ${pathString}`
           )
@@ -105,17 +103,15 @@ module.exports = ({
         return _createContainer({
           scope,
           parent: internal,
-          registry: {},
         })
       },
     }
   }
 
-  function createContainer(scopeName) {
+  function createContainer(scope) {
     return _createContainer({
-      scope: scopeName,
+      scope,
       parent: undefined,
-      registry: {},
     })
   }
 
