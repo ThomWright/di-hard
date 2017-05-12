@@ -23,9 +23,8 @@ module.exports = () => {
           }
 
           // return an existing instance from this scope if we have one
-          const cachedInstance = instances[id]
-          if (cachedInstance) {
-            return cachedInstance
+          if (instances.hasOwnProperty(id)) {
+            return instances[id]
           }
 
           // try to create a new instance

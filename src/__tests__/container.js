@@ -19,3 +19,10 @@ test("resolving a component instance", t => {
   const instance = container.resolve("testComponent")
   t.is(instance, "testComponentInstance", "should return the instance created by the factory")
 })
+
+test("resolving a falsy instance", t => {
+  const container = createContainer("root")
+  container.registerValue("id", undefined)
+  const value = container.resolve("id")
+  t.is(value, undefined)
+})
