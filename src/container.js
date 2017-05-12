@@ -1,3 +1,5 @@
+const lifetimes = require("./lifetimes")
+
 module.exports = () => {
   function _createContainer({
     scope,
@@ -25,8 +27,8 @@ module.exports = () => {
           }
 
           // try to create a new instance
-          const factory = registry[id]
-          if (!factory) {
+          const registration = registry[id]
+          if (!registration) {
             if (parent) {
               // if we can't do it in this scope, see if a parent can
               return parent.resolve(id)
@@ -36,10 +38,17 @@ module.exports = () => {
             )
           }
 
+          // create a new instance
+          const {factory, lifetime} = registration
           const dependencyPathToThisInstance = [...dependencyPath, id]
           const resolver = createResolver(dependencyPathToThisInstance)
           const instance = factory(resolver)
-          instances[id] = instance
+
+          if (lifetime !== lifetimes.TRANSIENT) {
+            // cache the instance for the lifetime of this scope
+            instances[id] = instance
+          }
+
           return instance
         },
 
@@ -76,7 +85,7 @@ module.exports = () => {
     }
 
     return {
-      registerFactory(id, factory) {
+      registerFactory(id, factory, lifetime) {
         if (typeof factory !== "function") {
           throw new Error(`Can't register '${id}' as a factory - it is not a function`)
         }
@@ -86,7 +95,13 @@ module.exports = () => {
         if (instances.hasOwnProperty(id)) {
           throw new Error(`Cannot register '${id}' - already registered as a value`)
         }
-        registry[id] = factory
+        if (lifetime && !lifetimes.hasOwnProperty(lifetime)) {
+          throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
+        }
+        if (!lifetime) {
+          lifetime = lifetimes.TRANSIENT
+        }
+        registry[id] = {factory, lifetime}
       },
 
       registerValue(id, value) {

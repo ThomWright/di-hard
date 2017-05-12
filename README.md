@@ -9,6 +9,7 @@ Docs will be written. For now the tests are the only docs.
 - instances are cached by default
 - instances are resolved and cached in the scope in which they are registered
 - a scope can only resolve instances from itself or a parent scope
+  - which means nothing can depend on something with a shorter lifetime
 
 ## Example
 
