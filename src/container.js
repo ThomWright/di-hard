@@ -131,7 +131,9 @@ module.exports = () => {
       },
 
       child(scope) {
-        // TODO insist on scope name
+        if (!scope) {
+          throw new Error("Must provide scope name")
+        }
         const path = internal.pathToScope(scope)
         if (path) {
           const pathString = path.join(" -> ")
@@ -148,6 +150,9 @@ module.exports = () => {
   }
 
   function createContainer(scope) {
+    if (!scope) {
+      throw new Error("Must provide scope name")
+    }
     // TODO insist on scope name
     return _createContainer({
       scope,

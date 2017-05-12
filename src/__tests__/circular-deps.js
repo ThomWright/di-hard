@@ -53,7 +53,7 @@ test("across scope boundaries", t => {
   parent.registerFactory("C", C)
   parent.registerFactory("D", D)
 
-  const child = parent.child()
+  const child = parent.child("child")
   child.registerFactory("A", A)
 
   const error = t.throws(

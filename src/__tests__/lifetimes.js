@@ -46,8 +46,8 @@ test("registration_scoped with child containers", t => {
   const container = createContainer("root")
   container.registerFactory("id", () => ++instances, REGISTRATION_SCOPED)
 
-  const i = container.child().resolve("id")
-  const j = container.child().resolve("id")
+  const i = container.child("name1").resolve("id")
+  const j = container.child("name2").resolve("id")
 
   t.is(i, 1)
   t.is(j, 1, "should cache the instance for the lifetime of the registration container")
