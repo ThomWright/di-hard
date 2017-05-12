@@ -10,8 +10,8 @@ test("simple circular dependency graph", t => {
   const B = ({A}) => A
 
   const container = createContainer("root")
-  container.register("A", A)
-  container.register("B", B)
+  container.registerFactory("A", A)
+  container.registerFactory("B", B)
 
   const error = t.throws(
     () => container.resolve("A"),
@@ -28,10 +28,10 @@ test("deeper circular dependency graph", t => {
   const D = ({C}) => C
 
   const container = createContainer("root")
-  container.register("A", A)
-  container.register("B", B)
-  container.register("C", C)
-  container.register("D", D)
+  container.registerFactory("A", A)
+  container.registerFactory("B", B)
+  container.registerFactory("C", C)
+  container.registerFactory("D", D)
 
   const error = t.throws(
     () => container.resolve("A"),

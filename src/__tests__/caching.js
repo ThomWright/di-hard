@@ -8,7 +8,7 @@ test("multiple calls to resolve", t => {
   let instances = 0
 
   const container = createContainer("root")
-  container.register("instanceCounter", () => ++instances)
+  container.registerFactory("instanceCounter", () => ++instances)
 
   container.resolve("instanceCounter")
   container.resolve("instanceCounter")

@@ -14,7 +14,7 @@ test("resolving a component instance", t => {
   const componentDefinition = () => "testComponentInstance"
 
   const container = createContainer("root")
-  container.register("testComponent", componentDefinition)
+  container.registerFactory("testComponent", componentDefinition)
 
   const instance = container.resolve("testComponent")
   t.is(instance, "testComponentInstance", "should return the instance created by the factory")

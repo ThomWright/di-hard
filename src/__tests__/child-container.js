@@ -13,7 +13,7 @@ test("creation", t => {
 
 test("resolving instances from parent", t => {
   const parent = createContainer("root")
-  parent.register("testComponent", () => "testComponentInstance")
+  parent.registerFactory("testComponent", () => "testComponentInstance")
   const child = parent.child("child")
 
   const instance = child.resolve("testComponent")
@@ -23,7 +23,7 @@ test("resolving instances from parent", t => {
 test("registering definitions", t => {
   const parent = createContainer("root")
   const child = parent.child("child")
-  child.register("testComponent", () => "testComponentInstance")
+  child.registerFactory("testComponent", () => "testComponentInstance")
 
   const error = t.throws(
     () => parent.resolve("testComponent"),
@@ -66,7 +66,7 @@ test("unknown dependency id", t => {
   const container = createContainer("high")
     .child("mid")
     .child("low")
-  container.register("testComponent", factory)
+  container.registerFactory("testComponent", factory)
 
   const error = t.throws(
     () => container.resolve("testComponent"),
@@ -75,4 +75,22 @@ test("unknown dependency id", t => {
   )
   t.regex(error.message, /dependencyName/, "should specify unknown id")
   t.regex(error.searchPath, /low -> mid -> high \(root\)/, "should specify search path")
+})
+
+test("shadowing parent registrations", t => {
+  const parent = createContainer("root")
+  parent.registerFactory("uniqueId", () => "parent instance")
+
+  const child = parent.child("child")
+
+  t.notThrows(
+    () => child.registerFactory("uniqueId", () => "child instance"),
+    "should be able to register same name in parent and child containers"
+  )
+
+  const parentInstance = parent.resolve("uniqueId")
+  t.is(parentInstance, "parent instance", "parent should resolve to the parent instance")
+
+  const childInstance = child.resolve("uniqueId")
+  t.is(childInstance, "child instance", "child should resolve to the child instance")
 })

@@ -29,8 +29,8 @@ function myThingFactory({theRealThing}) {
 }
 
 const container = require("@mft/di").createContainer("global")
-container.register("myThing", myThingFactory)
-container.register("theRealThing", theRealThingFactory)
+container.registerFactory("myThing", myThingFactory)
+container.registerFactory("theRealThing", theRealThingFactory)
 
 const myThing = container.resolve("myThing")
 myThing.doAThing() // "done"

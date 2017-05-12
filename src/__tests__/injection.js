@@ -17,8 +17,8 @@ test("single dependency", t => {
   const dependencyDefinition = () => "dependencyInstance"
 
   const container = createContainer("root")
-  container.register("testComponent", componentDefinition)
-  container.register("dependency", dependencyDefinition)
+  container.registerFactory("testComponent", componentDefinition)
+  container.registerFactory("dependency", dependencyDefinition)
 
   const instance = container.resolve("testComponent")
   const dep = instance.getInjectedDependency()
@@ -35,7 +35,7 @@ test("unknown dependency key", t => {
   }
 
   const container = createContainer("root")
-  container.register("testComponent", componentDefinition)
+  container.registerFactory("testComponent", componentDefinition)
 
   const error = t.throws(
     () => container.resolve("testComponent"),

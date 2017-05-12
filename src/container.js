@@ -76,11 +76,27 @@ module.exports = () => {
     }
 
     return {
-      register(id, factory) {
-        if (registry[id]) {
-          throw new Error(`Overwriting ${id}`)
+      registerFactory(id, factory) {
+        if (typeof factory !== "function") {
+          throw new Error(`Can't register '${id}' as a factory - it is not a function`)
+        }
+        if (registry.hasOwnProperty(id)) {
+          throw new Error(`Cannot register '${id}' - already registered`)
+        }
+        if (instances.hasOwnProperty(id)) {
+          throw new Error(`Cannot register '${id}' - already registered as a value`)
         }
         registry[id] = factory
+      },
+
+      registerValue(id, value) {
+        if (registry.hasOwnProperty(id)) {
+          throw new Error(`Cannot register '${id}' - already registered`)
+        }
+        if (instances.hasOwnProperty(id)) {
+          throw new Error(`Cannot register '${id}' - already registered as a value`)
+        }
+        instances[id] = value
       },
 
       resolve(id) {
