@@ -41,12 +41,6 @@ myService.doAThing() // "done"
 
 ## Concepts
 
-- instances `TRANSIENT` by default
-- when registered as `REGISTRATION`, instances are resolved and cached in the container in which they are registered
-- a container can only resolve dependencies from itself or a parent container
-    - which means nothing can depend on something with a shorter lifetime
-- can write components independently of the DI library
-
 The purpose of this library is to enable easy creation of your application's components, without having to worry about those components' dependencies.
 
 ### Components
