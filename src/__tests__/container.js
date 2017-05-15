@@ -10,6 +10,15 @@ test("create", t => {
   t.is(typeof container, "object", "should create an object")
 })
 
+test("creating without a name", t => {
+  const error = t.throws(
+    () => createContainer(),
+    Error,
+    "should throw when creating a container without a name"
+  )
+  t.regex(error.message, /name/)
+})
+
 test("resolving a component instance", t => {
   const componentDefinition = () => "testComponentInstance"
 

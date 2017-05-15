@@ -5,7 +5,7 @@ const createContainerModule = require("../container")
 const NOOP_STREAM = {write: () => {}}
 const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
 
-test("valid factory", t => {
+test("factory - valid", t => {
   const componentDefinition = () => "testComponentInstance"
 
   const container = createContainer("root")
@@ -15,7 +15,29 @@ test("valid factory", t => {
   )
 })
 
-test("invalid factory (not a function)", t => {
+test("factory - single argument", t => {
+  const container = createContainer("root")
+
+  const error = t.throws(
+    () => container.registerFactory("myID"),
+    Error
+  )
+  t.regex(error.message, /myID/)
+})
+
+test("factory - invalid ID", t => {
+  const container = createContainer("root")
+
+  function myFactory() {}
+
+  const error = t.throws(
+    () => container.registerFactory({}, myFactory),
+    Error
+  )
+  t.regex(error.message, /string/i)
+})
+
+test("factory - invalid (not a function)", t => {
   const container = createContainer("root")
   const error = t.throws(
     () => container.registerFactory("testComponent", "not a function"),
@@ -27,7 +49,7 @@ test("invalid factory (not a function)", t => {
   t.regex(error.message, /not a function/)
 })
 
-test("same name twice", t => {
+test("factory - same name twice", t => {
   const componentDefinition = () => "testComponentInstance"
 
   const container = createContainer("root")
@@ -42,14 +64,45 @@ test("same name twice", t => {
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
 })
 
-test("values", t => {
+test("value", t => {
   const container = createContainer("root")
   container.registerValue("myValue", "theValue")
   const val = container.resolve("myValue")
   t.is(val, "theValue")
 })
 
-test("value with same name as factory", t => {
+test("value - undefined", t => {
+  const container = createContainer("root")
+  t.notThrows(
+    () => container.registerValue("myValue", undefined),
+    "should accept undefined as a value"
+  )
+  const val = container.resolve("myValue")
+  t.is(val, undefined)
+})
+
+test("value - single argument", t => {
+  const container = createContainer("root")
+
+  const error = t.throws(
+    () => container.registerValue("myID"),
+    Error,
+    "should throw when value not supplied"
+  )
+  t.regex(error.message, /myID/)
+})
+
+test("value - invalid ID", t => {
+  const container = createContainer("root")
+
+  const error = t.throws(
+    () => container.registerValue({}, "value"),
+    Error
+  )
+  t.regex(error.message, /string/i)
+})
+
+test("value - with same name as factory", t => {
   const container = createContainer("root")
   container.registerFactory("uniqueId", () => {})
 
@@ -62,7 +115,7 @@ test("value with same name as factory", t => {
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
 })
 
-test("factory with same name as value", t => {
+test("factory - with same name as value", t => {
   const container = createContainer("root")
   container.registerValue("uniqueId", "value")
 
@@ -75,7 +128,7 @@ test("factory with same name as value", t => {
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
 })
 
-test("factory with same name as value of 'undefined'", t => {
+test("factory - with same name as value of 'undefined'", t => {
   const container = createContainer("root")
   container.registerValue("uniqueId", undefined)
 
@@ -99,7 +152,7 @@ test("chaining", t => {
   )
 })
 
-test("multiple values", t => {
+test("values", t => {
   const container = createContainer("root")
   container.registerValues({
     v1: "v1",
@@ -108,4 +161,13 @@ test("multiple values", t => {
 
   t.is(container.resolve("v1"), "v1")
   t.is(container.resolve("v2"), "v2")
+})
+
+test("values - invalid", t => {
+  const container = createContainer("root")
+
+  t.throws(
+    () => container.registerValues("not an object"),
+    Error
+  )
 })

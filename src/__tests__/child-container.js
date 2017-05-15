@@ -11,6 +11,17 @@ test("creation", t => {
   t.is(typeof child, "object", "should create a child container")
 })
 
+test("creating without a name", t => {
+  const container = createContainer("root")
+
+  const error = t.throws(
+    () => container.child(),
+    Error,
+    "should throw when creating a container without a name"
+  )
+  t.regex(error.message, /name/)
+})
+
 test("scope visibility (child -> parent)", t => {
   const parent = createContainer("root")
   parent.registerFactory("testComponent", () => "testComponentInstance")

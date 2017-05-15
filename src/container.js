@@ -6,7 +6,7 @@ module.exports = () => {
     parent,
   }) {
     const instances = {}
-    const registry = {}
+    const factories = {}
 
     function createResolver({
       previousDependencyPath = [],
@@ -28,7 +28,7 @@ module.exports = () => {
           }
 
           // try to create a new instance
-          const registration = registry[id]
+          const registration = factories[id]
           if (!registration) {
             const searchedScopes = [...previouslySearchedScopes, scope]
             if (parent) {
@@ -100,34 +100,30 @@ module.exports = () => {
         if (typeof factory !== "function") {
           throw new Error(`Can't register '${id}' as a factory - it is not a function`)
         }
-        if (registry.hasOwnProperty(id)) {
-          throw new Error(`Cannot register '${id}' - already registered`)
-        }
-        if (instances.hasOwnProperty(id)) {
-          throw new Error(`Cannot register '${id}' - already registered as a value`)
-        }
+        check(factories, instances, id)
         if (lifetime && !lifetimes.hasOwnProperty(lifetime)) {
           throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
         }
         if (!lifetime) {
           lifetime = lifetimes.TRANSIENT
         }
-        registry[id] = {factory, lifetime}
+        factories[id] = {factory, lifetime}
 
         return api
       },
 
       registerValues(values) {
+        if (typeof values !== "object") {
+          throw new Error("Cannot register values - not an object")
+        }
         Object.keys(values).forEach((id) => api.registerValue(id, values[id]))
         return api
       },
 
       registerValue(id, value) {
-        if (registry.hasOwnProperty(id)) {
-          throw new Error(`Cannot register '${id}' - already registered`)
-        }
-        if (instances.hasOwnProperty(id)) {
-          throw new Error(`Cannot register '${id}' - already registered as a value`)
+        check(factories, instances, id)
+        if (value === undefined && arguments.length < 2) {
+          throw new Error(`Can't register '${id}' - value not defined`)
         }
         instances[id] = value
 
@@ -182,5 +178,17 @@ function sameIdAndScope({id, scope}) {
   return (other) => {
     return other.id === id
       && other.scope === scope
+  }
+}
+
+function check(factories, instances, id) {
+  if (factories.hasOwnProperty(id)) {
+    throw new Error(`Cannot register '${id}' - already registered as a factory`)
+  }
+  if (instances.hasOwnProperty(id)) {
+    throw new Error(`Cannot register '${id}' - already registered as a value`)
+  }
+  if (typeof id !== "string") {
+    throw new Error(`Cannot register '${id}' - ID must be a string`)
   }
 }
