@@ -4,13 +4,20 @@
   "description": "Dependency injection",
   "main": "src/index.js",
   "author": "Momentum Financial Technology Ltd",
-  "homepage": "https://bitbucket.org/yourwealth/di#readme",
+  "keywords": [
+    "dependency",
+    "injection",
+    "di",
+    "container",
+    "ioc"
+  ],
+  "homepage": "https://github.com/momentumft/di",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@bitbucket.org/yourwealth/log.git"
+    "url": "git+ssh://git@github.com:momentumft/di.git"
   },
   "bugs": {
-    "url": "https://bitbucket.org/yourwealth/di/issues"
+    "url": "https://github.com/momentumft/di/issues"
   },
   "engines": {
     "node": "^6.0.0"
