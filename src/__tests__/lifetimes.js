@@ -1,6 +1,6 @@
 const test = require("ava")
 const createContainerModule = require("../container")
-const {TRANSIENT, REGISTRATION_SCOPED} = require("../lifetimes")
+const {TRANSIENT, REGISTRATION} = require("../lifetimes")
 
 const NOOP_STREAM = {write: () => {}}
 const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
@@ -17,7 +17,7 @@ test("default", t => {
   t.is(j, 2, "should have TRANSIENT lifetime")
 })
 
-test("transient", t => {
+test("TRANSIENT", t => {
   let instances = 0
   const container = createContainer("root")
   container.registerFactory("id", () => ++instances, TRANSIENT)
@@ -29,10 +29,10 @@ test("transient", t => {
   t.is(j, 2, "should return a new instance each time")
 })
 
-test("registration_scoped", t => {
+test("REGISTRATION", t => {
   let instances = 0
   const container = createContainer("root")
-  container.registerFactory("id", () => ++instances, REGISTRATION_SCOPED)
+  container.registerFactory("id", () => ++instances, REGISTRATION)
 
   const i = container.resolve("id")
   const j = container.resolve("id")
@@ -41,10 +41,10 @@ test("registration_scoped", t => {
   t.is(j, 1, "should cache the instance")
 })
 
-test("registration_scoped with child containers", t => {
+test("REGISTRATION with child containers", t => {
   let instances = 0
   const container = createContainer("root")
-  container.registerFactory("id", () => ++instances, REGISTRATION_SCOPED)
+  container.registerFactory("id", () => ++instances, REGISTRATION)
 
   const i = container.child("name1").resolve("id")
   const j = container.child("name2").resolve("id")

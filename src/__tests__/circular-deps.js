@@ -42,7 +42,7 @@ test("deeper circular dependency graph", t => {
   t.regex(error.message, /[A \(root\) -> B \(root\) -> D \(root\) -> C \(root\) -> D \(root\)|A \(root\) -> C \(root\) -> D \(root\) -> C \(root\)]/, "ACDC is a circular dependency")
 })
 
-test("across scope boundaries", t => {
+test("across container boundaries", t => {
   const A = ({B, C}) => [B, C]
   const B = ({D}) => D
   const C = ({D}) => D

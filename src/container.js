@@ -2,7 +2,7 @@ const lifetimes = require("./lifetimes")
 
 module.exports = () => {
   function _createContainer({
-    scope,
+    containerName,
     parent,
   }) {
     const instances = {}
@@ -10,19 +10,19 @@ module.exports = () => {
 
     function createResolver({
       previousDependencyPath = [],
-      previouslySearchedScopes = [],
+      previouslySearchedContainers = [],
     }) {
       return new Proxy({}, {
-        get(target, name) {
-          const id = name
+        get(target, propertyName) {
+          const id = propertyName
 
           // check for circular dependencies
-          const dependencyPath = [...previousDependencyPath, {id, scope}]
-          if (previousDependencyPath.find(sameIdAndScope({id, scope}))) {
+          const dependencyPath = [...previousDependencyPath, {id, containerName}]
+          if (previousDependencyPath.find(sameIdAndContainer({id, containerName}))) {
             throw new Error(`Circular dependencies: '${formatDepPath(dependencyPath)}'`)
           }
 
-          // return an existing instance from this scope if we have one
+          // return an existing instance from this container if we have one
           if (instances.hasOwnProperty(id)) {
             return instances[id]
           }
@@ -30,17 +30,17 @@ module.exports = () => {
           // try to create a new instance
           const registration = factories[id]
           if (!registration) {
-            const searchedScopes = [...previouslySearchedScopes, scope]
+            const searchedContainers = [...previouslySearchedContainers, containerName]
             if (parent) {
-              // if we can't do it in this scope, see if a parent can
+              // if we can't do it in this container, see if a parent can
               return parent.resolve(
                 id,
                 previousDependencyPath,
-                searchedScopes
+                searchedContainers
               )
             }
             throw new Error(
-              `Nothing registered for ID '${id}' in scopes: '${searchedScopes.join(" -> ")}'.` +
+              `Nothing registered for ID '${id}' in containers: '${searchedContainers.join(" -> ")}'.` +
               ` Trying to resolve: '${formatDepPath(dependencyPath)}'.`
             )
           }
@@ -53,7 +53,7 @@ module.exports = () => {
           const instance = factory(resolver)
 
           if (lifetime !== lifetimes.TRANSIENT) {
-            // cache the instance for the lifetime of this scope
+            // cache the instance for the lifetime of this containerName
             instances[id] = instance
           }
 
@@ -67,29 +67,29 @@ module.exports = () => {
     }
 
     const internal = {
-      resolve(id, previousDependencyPath = [], previouslySearchedScopes = []) {
-        return createResolver({previousDependencyPath, previouslySearchedScopes})[id]
+      resolve(id, previousDependencyPath = [], previouslySearchedContainers = []) {
+        return createResolver({previousDependencyPath, previouslySearchedContainers})[id]
       },
 
-      // return the list of visible scopes, in order of traversal
-      visibleScopes() {
+      // return the list of visible containers, in order of traversal
+      visibleScope() {
         if (!parent) {
-          return [scope]
+          return [containerName]
         }
-        return [scope, ...parent.visibleScopes()]
+        return [containerName, ...parent.visibleScope()]
       },
 
-      // return the path from this scope to targetScope, or undefined if targetScope is not visible
-      pathToScope(targetScope) {
-        if (targetScope === scope) {
-          return [scope]
+      // return the path from this container to targetContainer, or undefined if targetContainer is not visible
+      visiblePathToContainer(targetContainer) {
+        if (targetContainer === containerName) {
+          return [containerName]
         }
         if (!parent) {
           return undefined
         }
-        const parentScopes = parent.pathToScope(targetScope)
-        if (parentScopes) {
-          return [scope, ...parentScopes]
+        const parentContainers = parent.visiblePathToContainer(targetContainer)
+        if (parentContainers) {
+          return [containerName, ...parentContainers]
         }
         return undefined
       },
@@ -134,19 +134,19 @@ module.exports = () => {
         return internal.resolve(id)
       },
 
-      child(scope) {
-        if (!scope) {
-          throw new Error("Must provide scope name")
+      child(containerName) {
+        if (!containerName) {
+          throw new Error("Must provide container name")
         }
-        const path = internal.pathToScope(scope)
+        const path = internal.visiblePathToContainer(containerName)
         if (path) {
           const pathString = path.join(" -> ")
           throw new Error(
-            `Cannot use scope name '${scope}': parent container named '${scope}' already exists: ${pathString}`
+            `Cannot use container name '${containerName}': parent container named '${containerName}' already exists: ${pathString}`
           )
         }
         return _createContainer({
-          scope,
+          containerName,
           parent: internal,
         })
       },
@@ -154,13 +154,12 @@ module.exports = () => {
     return api
   }
 
-  function createContainer(scope) {
-    if (!scope) {
-      throw new Error("Must provide scope name")
+  function createContainer(containerName) {
+    if (!containerName) {
+      throw new Error("Must provide container name")
     }
-    // TODO insist on scope name
     return _createContainer({
-      scope,
+      containerName,
       parent: undefined,
     })
   }
@@ -171,13 +170,13 @@ module.exports = () => {
 }
 
 function formatDepPath(dependencyPath) {
-  return dependencyPath.map(d => `${d.id} (${d.scope})`).join(" -> ")
+  return dependencyPath.map(d => `${d.id} (${d.containerName})`).join(" -> ")
 }
 
-function sameIdAndScope({id, scope}) {
+function sameIdAndContainer({id, containerName}) {
   return (other) => {
     return other.id === id
-      && other.scope === scope
+      && other.containerName === containerName
   }
 }
 
