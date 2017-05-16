@@ -1,5 +1,11 @@
 # DI
 
+[![npm](https://img.shields.io/npm/v/@mft/di.svg)](https://www.npmjs.com/package/@mft/di)
+[![dependency Status](https://img.shields.io/david/momentumft/di.svg?maxAge=1000)](https://david-dm.org/momentumft/di)
+[![devDependency Status](https://img.shields.io/david/dev/momentumft/di.svg?maxAge=1000)](https://david-dm.org/momentumft/di)
+[![license](https://img.shields.io/github/license/momentumft/di.svg)](https://github.com/momentumft/di)
+[![node](https://img.shields.io/node/v/@mft/di.svg?maxAge=1000)](https://www.npmjs.com/package/@mft/di)
+
 Simple, predictable dependency injection
 
 ## Example
