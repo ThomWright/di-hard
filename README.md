@@ -173,7 +173,7 @@ Services and values can be registered with a container. It is responsible for re
 - `container.registerFactory(id: string, factory: function [, lifetime]) -> container`
 - `container.registerValue(id: string, value: any) -> container`
 - `container.registerValues(values: {string: any}) -> container`
-- `container.resolve(id: string) - componentInstance`
+- `container.resolve(id: string) -> componentInstance`
 - `container.child(scopeName: string) -> container`
 
 ### Factory functions
