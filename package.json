@@ -20,7 +20,7 @@
     "url": "https://github.com/momentumft/di/issues"
   },
   "engines": {
-    "node": "^6.0.0"
+    "node": ">=6.0.0"
   },
   "scripts": {
     "lint": "eslint src",
