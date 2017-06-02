@@ -104,6 +104,9 @@ module.exports = () => {
         if (lifetime && !lifetimes.hasOwnProperty(lifetime)) {
           throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
         }
+        if (arguments.length >= 3 && !lifetime) {
+          throw new Error(`Cannot register '${id}' - lifetime is set but not defined`)
+        }
         if (!lifetime) {
           lifetime = lifetimes.TRANSIENT
         }

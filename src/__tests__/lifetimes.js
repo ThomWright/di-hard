@@ -17,6 +17,16 @@ test("default", t => {
   t.is(j, 2, "should have TRANSIENT lifetime")
 })
 
+test("undefined", t => {
+  let instances = 0
+  const container = createContainer("root")
+  const error = t.throws(
+    () => container.registerFactory("ididid", () => ++instances, undefined),
+    Error
+  )
+  t.regex(error.message, /ididid/)
+})
+
 test("TRANSIENT", t => {
   let instances = 0
   const container = createContainer("root")
