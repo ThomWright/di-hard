@@ -1,6 +1,6 @@
 {
   "name": "@mft/di",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Dependency injection",
   "main": "src/index.js",
   "author": "Momentum Financial Technology Ltd",
