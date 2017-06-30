@@ -1,5 +1,10 @@
 const lifetimes = require("./lifetimes")
 
+// Do whatever you want with this, it shouldn't throw any Errors
+const superDooperErrorSuppressor = new Proxy(() => superDooperErrorSuppressor, {
+  get: () => superDooperErrorSuppressor,
+})
+
 module.exports = () => {
   return {
     createContainer(containerName) {
@@ -83,6 +88,35 @@ function _createContainer({
       return createResolver({previousDependencyPath, previouslySearchedContainers})[id]
     },
 
+    getDebugInfo() {
+      const info = {
+        name: containerName,
+        factories: {},
+        instances: Object.keys(instances),
+      }
+      Object.keys(factories)
+        .forEach((id) => {
+          const registration = factories[id]
+          info.factories[id] = {
+            lifetime: registration.lifetime,
+            dependencies: [],
+          }
+          registration.factory(new Proxy({}, {
+            get(target, propertyName) {
+              info
+                .factories[id]
+                .dependencies
+                .push(propertyName)
+              return superDooperErrorSuppressor
+            },
+          }))
+        })
+      if (parent) {
+        info.parent = parent.getDebugInfo()
+      }
+      return info
+    },
+
     // return the list of visible containers, in order of traversal
     visibleScope() {
       if (!parent) {
@@ -164,6 +198,10 @@ function _createContainer({
         containerName,
         parent: internal,
       })
+    },
+
+    getDebugInfo() {
+      return internal.getDebugInfo()
     },
   }
   return api
