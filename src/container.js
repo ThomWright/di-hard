@@ -44,14 +44,6 @@ function _createContainer({
       })
     },
 
-    // return the list of visible containers, in order of traversal
-    visibleScope() {
-      if (!parentContainer) {
-        return [containerName]
-      }
-      return [containerName, ...parentContainer.visibleScope()]
-    },
-
     // return the path from this container to targetContainer, or undefined if targetContainer is not visible
     visiblePathToContainer(targetContainer) {
       if (targetContainer === containerName) {
