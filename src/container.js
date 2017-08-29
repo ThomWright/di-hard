@@ -68,70 +68,70 @@ function _createContainer({
     },
   }
 
-  const api = {
-    registerFactory(id, factory, lifetime) {
-      if (typeof factory !== "function") {
-        throw new Error(`Can't register '${id}' as a factory - it is not a function`)
-      }
-      check(rootModule.factories, rootModule.instances, id)
-      if (lifetime && !lifetimes.hasOwnProperty(lifetime)) {
-        throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
-      }
-      if (arguments.length >= 3 && !lifetime) {
-        throw new Error(`Cannot register '${id}' - lifetime is set but not defined`)
-      }
-      if (!lifetime) {
-        lifetime = lifetimes.TRANSIENT
-      }
-      rootModule.factories[id] = {factory, lifetime}
+  function createRegistrationApi() {
+    const registrationApi = {
+      registerFactory(id, factory, lifetime) {
+        if (typeof factory !== "function") {
+          throw new Error(`Can't register '${id}' as a factory - it is not a function`)
+        }
+        check(rootModule.factories, rootModule.instances, id)
+        if (lifetime && !lifetimes.hasOwnProperty(lifetime)) {
+          throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
+        }
+        if (arguments.length >= 3 && !lifetime) {
+          throw new Error(`Cannot register '${id}' - lifetime is set but not defined`)
+        }
+        if (!lifetime) {
+          lifetime = lifetimes.TRANSIENT
+        }
+        rootModule.factories[id] = {factory, lifetime}
 
-      return api
-    },
+        return registrationApi
+      },
 
-    registerValues(values) {
-      if (typeof values !== "object") {
-        throw new Error("Cannot register values - not an object")
-      }
-      Object.keys(values).forEach((id) => api.registerValue(id, values[id]))
-      return api
-    },
+      registerValue(id, value) {
+        check(rootModule.factories, rootModule.instances, id)
+        if (value === undefined && arguments.length < 2) {
+          throw new Error(`Can't register '${id}' - value not defined`)
+        }
+        rootModule.instances[id] = value
 
-    registerValue(id, value) {
-      check(rootModule.factories, rootModule.instances, id)
-      if (value === undefined && arguments.length < 2) {
-        throw new Error(`Can't register '${id}' - value not defined`)
-      }
-      rootModule.instances[id] = value
-
-      return api
-    },
-
-    resolve(id) {
-      return internal.resolve(id)
-    },
-
-    child(containerName) {
-      if (!containerName) {
-        throw new Error("Must provide container name")
-      }
-      const path = internal.visiblePathToContainer(containerName)
-      if (path) {
-        const pathString = path.join(" -> ")
-        throw new Error(
-          `Cannot use container name '${containerName}': parent container named '${containerName}' already exists: ${pathString}`
-        )
-      }
-      return _createContainer({
-        containerName,
-        parentContainer: internal,
-      })
-    },
-
-    getDebugInfo() {
-      return internal.getDebugInfo()
-    },
+        return registrationApi
+      },
+    }
+    return registrationApi
   }
-  return api
+
+  return Object.assign(
+    {},
+    createRegistrationApi(),
+    {
+      resolve(id) {
+        return internal.resolve(id)
+      },
+
+      child(containerName) {
+        if (!containerName) {
+          throw new Error("Must provide container name")
+        }
+        const path = internal.visiblePathToContainer(containerName)
+        if (path) {
+          const pathString = path.join(" -> ")
+          throw new Error(
+            `Cannot use container name '${containerName}': parent container named '${containerName}' already exists: ${pathString}`
+          )
+        }
+        return _createContainer({
+          containerName,
+          parentContainer: internal,
+        })
+      },
+
+      getDebugInfo() {
+        return internal.getDebugInfo()
+      },
+    }
+  )
 }
 
 function check(factories, instances, id) {
