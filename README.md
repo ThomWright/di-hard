@@ -168,7 +168,7 @@ This means nothing can depend on something with a shorter lifetime. For example,
 
 ### DI
 
-- `di.createContainer(scopeName: string) -> container`
+- `di.createContainer(containerName: string) -> container`
 - `di.lifetimes.TRANSIENT`
 - `di.lifetimes.REGISTRATION`
 
@@ -176,11 +176,18 @@ This means nothing can depend on something with a shorter lifetime. For example,
 
 Services and values can be registered with a container. It is responsible for resolving an ID to an instance.
 
-- `container.registerFactory(id: string, factory: function [, lifetime]) -> container`
-- `container.registerValue(id: string, value: any) -> container`
-- `container.registerValues(values: {string: any}) -> container`
+- `container.registerFactory(id: string, factory: function [, lifetime]) -> registrationApi`
+- `container.registerValue(id: string, value: any) -> registrationApi`
 - `container.resolve(id: string) -> componentInstance`
-- `container.child(scopeName: string) -> container`
+- `container.child(containerName: string) -> container`
+
+The `registerX` functions are chainable, for example:
+
+```js
+container
+  .registerFactory(...)
+  .registerValue(...)
+```
 
 ### Factory functions
 
