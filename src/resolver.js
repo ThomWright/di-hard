@@ -3,8 +3,7 @@ const lifetimes = require("./lifetimes")
 module.exports = function createResolver({
   containerName,
   parentContainer,
-  instances,
-  factories,
+  rootModule,
   previousDependencyPath = [],
   previouslySearchedContainers = [],
 }) {
@@ -19,12 +18,12 @@ module.exports = function createResolver({
       }
 
       // return an existing instance from this container if we have one
-      if (instances.hasOwnProperty(id)) {
-        return instances[id]
+      if (rootModule.instances.hasOwnProperty(id)) {
+        return rootModule.instances[id]
       }
 
       // try to create a new instance
-      const registration = factories[id]
+      const registration = rootModule.factories[id]
       if (!registration) {
         const searchedContainers = [...previouslySearchedContainers, containerName]
         if (parentContainer) {
@@ -46,15 +45,14 @@ module.exports = function createResolver({
       const resolver = createResolver({
         containerName,
         parentContainer,
-        instances,
-        factories,
+        rootModule,
         previousDependencyPath: dependencyPath,
       })
       const instance = factory(resolver)
 
       if (lifetime !== lifetimes.TRANSIENT) {
         // cache the instance for the lifetime of this containerName
-        instances[id] = instance
+        rootModule.instances[id] = instance
       }
 
       return instance

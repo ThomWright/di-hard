@@ -20,16 +20,17 @@ function _createContainer({
   containerName,
   parentContainer,
 }) {
-  const instances = {}
-  const factories = {}
+  const rootModule = {
+    instances: {},
+    factories: {},
+  }
 
   const internal = {
     resolve(id, previousDependencyPath = [], previouslySearchedContainers = []) {
       return createResolver({
         containerName,
         parentContainer,
-        instances,
-        factories,
+        rootModule,
         previousDependencyPath,
         previouslySearchedContainers,
       })[id]
@@ -39,8 +40,7 @@ function _createContainer({
       return getDebugInfo({
         containerName,
         parentContainer,
-        instances,
-        factories,
+        rootModule,
       })
     },
 
@@ -73,7 +73,7 @@ function _createContainer({
       if (typeof factory !== "function") {
         throw new Error(`Can't register '${id}' as a factory - it is not a function`)
       }
-      check(factories, instances, id)
+      check(rootModule.factories, rootModule.instances, id)
       if (lifetime && !lifetimes.hasOwnProperty(lifetime)) {
         throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
       }
@@ -83,7 +83,7 @@ function _createContainer({
       if (!lifetime) {
         lifetime = lifetimes.TRANSIENT
       }
-      factories[id] = {factory, lifetime}
+      rootModule.factories[id] = {factory, lifetime}
 
       return api
     },
@@ -97,11 +97,11 @@ function _createContainer({
     },
 
     registerValue(id, value) {
-      check(factories, instances, id)
+      check(rootModule.factories, rootModule.instances, id)
       if (value === undefined && arguments.length < 2) {
         throw new Error(`Can't register '${id}' - value not defined`)
       }
-      instances[id] = value
+      rootModule.instances[id] = value
 
       return api
     },

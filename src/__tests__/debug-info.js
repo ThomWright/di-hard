@@ -22,30 +22,34 @@ test("listing registrations and their dependencies", t => {
 
   t.deepEqual(tree, {
     name: "child",
-    factories: {
-      C: {
-        lifetime: TRANSIENT,
-        dependencies: ["A"],
+    rootModule: {
+      factories: {
+        C: {
+          lifetime: TRANSIENT,
+          dependencies: ["A"],
+        },
+        D: {
+          lifetime: TRANSIENT,
+          dependencies: ["E"],
+        },
       },
-      D: {
-        lifetime: TRANSIENT,
-        dependencies: ["E"],
-      },
+      instances: ["E"],
     },
-    instances: ["E"],
     parentContainer: {
       name: "root",
-      factories: {
-        A: {
-          lifetime: REGISTRATION,
-          dependencies: ["B"],
+      rootModule: {
+        factories: {
+          A: {
+            lifetime: REGISTRATION,
+            dependencies: ["B"],
+          },
+          B: {
+            lifetime: TRANSIENT,
+            dependencies: [],
+          },
         },
-        B: {
-          lifetime: TRANSIENT,
-          dependencies: [],
-        },
+        instances: [],
       },
-      instances: [],
     },
   })
 })

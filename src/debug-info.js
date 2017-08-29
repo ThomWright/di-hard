@@ -7,24 +7,34 @@ const superDooperErrorSuppressor = new Proxy(() => superDooperErrorSuppressor, {
 module.exports = function getDebugInfo({
   containerName,
   parentContainer,
-  instances,
-  factories,
+  rootModule,
 }) {
   const info = {
     name: containerName,
-    factories: {},
-    instances: Object.keys(instances),
+    rootModule: getModuleDebugInfo(rootModule),
   }
-  Object.keys(factories)
+
+  if (parentContainer) {
+    info.parentContainer = parentContainer.getDebugInfo()
+  }
+  return info
+}
+
+function getModuleDebugInfo(mod) {
+  const modInfo = {
+    instances: Object.keys(mod.instances),
+    factories: {},
+  }
+  Object.keys(mod.factories)
     .forEach((id) => {
-      const registration = factories[id]
-      info.factories[id] = {
+      const registration = mod.factories[id]
+      modInfo.factories[id] = {
         lifetime: registration.lifetime,
         dependencies: [],
       }
       registration.factory(new Proxy({}, {
         get(target, propertyName) {
-          info
+          modInfo
             .factories[id]
             .dependencies
             .push(propertyName)
@@ -32,8 +42,6 @@ module.exports = function getDebugInfo({
         },
       }))
     })
-  if (parentContainer) {
-    info.parentContainer = parentContainer.getDebugInfo()
-  }
-  return info
+
+  return modInfo
 }
