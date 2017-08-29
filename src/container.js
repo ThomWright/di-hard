@@ -10,7 +10,7 @@ module.exports = () => {
       }
       return _createContainer({
         containerName,
-        parent: undefined,
+        parentContainer: undefined,
       })
     },
   }
@@ -18,7 +18,7 @@ module.exports = () => {
 
 function _createContainer({
   containerName,
-  parent,
+  parentContainer,
 }) {
   const instances = {}
   const factories = {}
@@ -27,7 +27,7 @@ function _createContainer({
     resolve(id, previousDependencyPath = [], previouslySearchedContainers = []) {
       return createResolver({
         containerName,
-        parent,
+        parentContainer,
         instances,
         factories,
         previousDependencyPath,
@@ -38,7 +38,7 @@ function _createContainer({
     getDebugInfo() {
       return getDebugInfo({
         containerName,
-        parent,
+        parentContainer,
         instances,
         factories,
       })
@@ -46,10 +46,10 @@ function _createContainer({
 
     // return the list of visible containers, in order of traversal
     visibleScope() {
-      if (!parent) {
+      if (!parentContainer) {
         return [containerName]
       }
-      return [containerName, ...parent.visibleScope()]
+      return [containerName, ...parentContainer.visibleScope()]
     },
 
     // return the path from this container to targetContainer, or undefined if targetContainer is not visible
@@ -57,10 +57,10 @@ function _createContainer({
       if (targetContainer === containerName) {
         return [containerName]
       }
-      if (!parent) {
+      if (!parentContainer) {
         return undefined
       }
-      const parentContainers = parent.visiblePathToContainer(targetContainer)
+      const parentContainers = parentContainer.visiblePathToContainer(targetContainer)
       if (parentContainers) {
         return [containerName, ...parentContainers]
       }
@@ -123,7 +123,7 @@ function _createContainer({
       }
       return _createContainer({
         containerName,
-        parent: internal,
+        parentContainer: internal,
       })
     },
 

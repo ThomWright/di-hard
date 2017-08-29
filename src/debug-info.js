@@ -6,7 +6,7 @@ const superDooperErrorSuppressor = new Proxy(() => superDooperErrorSuppressor, {
 
 module.exports = function getDebugInfo({
   containerName,
-  parent,
+  parentContainer,
   instances,
   factories,
 }) {
@@ -32,8 +32,8 @@ module.exports = function getDebugInfo({
         },
       }))
     })
-  if (parent) {
-    info.parent = parent.getDebugInfo()
+  if (parentContainer) {
+    info.parentContainer = parentContainer.getDebugInfo()
   }
   return info
 }

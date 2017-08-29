@@ -33,7 +33,7 @@ test("listing registrations and their dependencies", t => {
       },
     },
     instances: ["E"],
-    parent: {
+    parentContainer: {
       name: "root",
       factories: {
         A: {

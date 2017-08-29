@@ -2,7 +2,7 @@ const lifetimes = require("./lifetimes")
 
 module.exports = function createResolver({
   containerName,
-  parent,
+  parentContainer,
   instances,
   factories,
   previousDependencyPath = [],
@@ -27,9 +27,9 @@ module.exports = function createResolver({
       const registration = factories[id]
       if (!registration) {
         const searchedContainers = [...previouslySearchedContainers, containerName]
-        if (parent) {
-          // if we can't do it in this container, see if a parent can
-          return parent.resolve(
+        if (parentContainer) {
+          // if we can't do it in this container, see if a parentContainer can
+          return parentContainer.resolve(
             id,
             previousDependencyPath,
             searchedContainers
@@ -45,7 +45,7 @@ module.exports = function createResolver({
       const {factory, lifetime} = registration
       const resolver = createResolver({
         containerName,
-        parent,
+        parentContainer,
         instances,
         factories,
         previousDependencyPath: dependencyPath,
