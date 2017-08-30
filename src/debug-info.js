@@ -11,7 +11,7 @@ module.exports = function getDebugInfo({
 }) {
   const info = {
     name: containerName,
-    rootModule: getModuleDebugInfo(rootModule),
+    module: getModuleDebugInfo(rootModule),
   }
 
   if (parentContainer) {

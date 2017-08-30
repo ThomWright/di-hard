@@ -8,7 +8,7 @@ const NOOP_STREAM = {write: () => {}}
 const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
 
 test("listing registrations and their dependencies", t => {
-  const parent = createContainer("root")
+  const parent = createContainer("parent")
   parent.registerFactory("A", ({B}) => B, REGISTRATION)
   parent.registerFactory("B", ({}) => {})
 
@@ -22,7 +22,7 @@ test("listing registrations and their dependencies", t => {
 
   t.deepEqual(tree, {
     name: "child",
-    rootModule: {
+    module: {
       factories: {
         C: {
           lifetime: TRANSIENT,
@@ -36,8 +36,8 @@ test("listing registrations and their dependencies", t => {
       instances: ["E"],
     },
     parentContainer: {
-      name: "root",
-      rootModule: {
+      name: "parent",
+      module: {
         factories: {
           A: {
             lifetime: REGISTRATION,
