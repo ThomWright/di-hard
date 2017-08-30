@@ -128,6 +128,19 @@ test("factory - with same name as value", t => {
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
 })
 
+test("factory - with same name as submodule", t => {
+  const container = createContainer("root")
+  container.registerSubmodule("uniqueId", "value")
+
+  const error = t.throws(
+    () => container.registerFactory("uniqueId", () => {}),
+    Error,
+    "should not be able to reuse IDs"
+  )
+
+  t.regex(error.message, /uniqueId/, "should specify the problem ID")
+})
+
 test("factory - with same name as value of 'undefined'", t => {
   const container = createContainer("root")
   container.registerValue("uniqueId", undefined)
@@ -146,16 +159,60 @@ test("chaining", t => {
     () => createContainer("root")
       .registerFactory("f", () => {})
       .registerValue("a", "a")
+      .registerSubmodule("m")
       .registerValue("b", "b"),
     "should not throw when chaining registations"
   )
 })
 
-test("values - invalid", t => {
-  const container = createContainer("root")
+test("submodule", t => {
+  const container = createContainer("container-with-submodule")
 
-  t.throws(
-    () => container.registerValues("not an object"),
-    Error
+  t.notThrows(
+    () => container.registerSubmodule("submodule"),
+    "should accept a submodule registration"
   )
+})
+
+test("submodule - with same name as factory", t => {
+  const container = createContainer("root")
+  container.registerSubmodule("uniqueId", "value")
+
+  const error = t.throws(
+    () => container.registerFactory("uniqueId", () => {}),
+    Error,
+    "should not be able to reuse IDs"
+  )
+
+  t.regex(error.message, /uniqueId/, "should specify the problem ID")
+})
+
+test("submodule - with same name as value", t => {
+  const container = createContainer("root")
+  container.registerSubmodule("uniqueId", "value")
+
+  const error = t.throws(
+    () => container.registerValue("uniqueId", () => {}),
+    Error,
+    "should not be able to reuse IDs"
+  )
+
+  t.regex(error.message, /uniqueId/, "should specify the problem ID")
+})
+
+test("submodule - value within a submodule", t => {
+  const container = createContainer("container-with-submodule")
+
+  container
+    .registerSubmodule("submodule")
+      .registerValue("valueId", "some-value")
+
+  const error = t.throws(
+    () => container.resolve("valueId"),
+    Error,
+    "values registered in a submodule should not be resolvable at the top level"
+  )
+
+  t.regex(error.message, /Nothing registered/, "should state the problem")
+  t.regex(error.message, /valueId/, "should specify the problem ID")
 })

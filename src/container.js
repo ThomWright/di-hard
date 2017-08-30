@@ -23,6 +23,7 @@ function _createContainer({
   const rootModule = {
     instances: {},
     factories: {},
+    modules: {},
   }
 
   const internal = {
@@ -60,13 +61,14 @@ function _createContainer({
     },
   }
 
-  function createRegistrationApi() {
+  function createRegistrationApi(moduleContext = []) {
     const registrationApi = {
       registerFactory(id, factory, lifetime) {
         if (typeof factory !== "function") {
           throw new Error(`Can't register '${id}' as a factory - it is not a function`)
         }
-        check(rootModule.factories, rootModule.instances, id)
+        const currentModule = getSubModule(moduleContext, rootModule)
+        check(currentModule, id)
         if (lifetime && !lifetimes.hasOwnProperty(lifetime)) {
           throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
         }
@@ -76,19 +78,30 @@ function _createContainer({
         if (!lifetime) {
           lifetime = lifetimes.TRANSIENT
         }
-        rootModule.factories[id] = {factory, lifetime}
+        currentModule.factories[id] = {factory, lifetime}
 
         return registrationApi
       },
 
       registerValue(id, value) {
-        check(rootModule.factories, rootModule.instances, id)
+        const currentModule = getSubModule(moduleContext, rootModule)
+        check(currentModule, id)
         if (value === undefined && arguments.length < 2) {
           throw new Error(`Can't register '${id}' - value not defined`)
         }
-        rootModule.instances[id] = value
+        currentModule.instances[id] = value
 
         return registrationApi
+      },
+      registerSubmodule(id) {
+        const currentModule = getSubModule(moduleContext, rootModule)
+        check(currentModule, id)
+        currentModule.modules[id] = {
+          instances: {},
+          factories: {},
+          modules: {},
+        }
+        return createRegistrationApi([...moduleContext, id])
       },
     }
     return registrationApi
@@ -126,14 +139,25 @@ function _createContainer({
   )
 }
 
-function check(factories, instances, id) {
-  if (factories.hasOwnProperty(id)) {
+function check(module, id) {
+  if (module.factories.hasOwnProperty(id)) {
     throw new Error(`Cannot register '${id}' - already registered as a factory`)
   }
-  if (instances.hasOwnProperty(id)) {
+  if (module.instances.hasOwnProperty(id)) {
     throw new Error(`Cannot register '${id}' - already registered as a value`)
+  }
+  if (module.modules.hasOwnProperty(id)) {
+    throw new Error(`Cannot register '${id}' - already registered as a submodule`)
   }
   if (typeof id !== "string") {
     throw new Error(`Cannot register '${id}' - ID must be a string`)
   }
+}
+
+function getSubModule(modulePath, currentModule) {
+  let targetModule = currentModule
+  modulePath.forEach((modId) => {
+    targetModule = targetModule.modules[modId]
+  })
+  return targetModule
 }
