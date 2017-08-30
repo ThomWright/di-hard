@@ -152,6 +152,9 @@ function check(module, id) {
   if (typeof id !== "string") {
     throw new Error(`Cannot register '${id}' - ID must be a string`)
   }
+  if (id.includes(".")) {
+    throw new Error(`cannot register '${id}' - '.' is a reserved character`)
+  }
 }
 
 function getSubModule(modulePath, currentModule) {

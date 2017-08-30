@@ -205,7 +205,7 @@ test("submodule - value within a submodule", t => {
 
   container
     .registerSubmodule("submodule")
-      .registerValue("valueId", "some-value")
+      .registerValue("valueId", "some value")
 
   const error = t.throws(
     () => container.resolve("valueId"),
@@ -215,4 +215,16 @@ test("submodule - value within a submodule", t => {
 
   t.regex(error.message, /Nothing registered/, "should state the problem")
   t.regex(error.message, /valueId/, "should specify the problem ID")
+})
+
+test("reserved characters", t => {
+  const container = createContainer("container-with-submodule")
+
+  const error = t.throws(
+    () => container.registerValue("x.y", "some value"),
+    Error,
+    "should not be able to register IDs which include '.'"
+  )
+  t.regex(error.message, /reserved character/, "should state the problem")
+  t.regex(error.message, /\./, "should show the problem character")
 })
