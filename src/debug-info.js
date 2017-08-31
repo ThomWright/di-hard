@@ -1,7 +1,13 @@
 
 // Do whatever you want with this, it shouldn't throw any Errors
 const superDooperErrorSuppressor = new Proxy(() => superDooperErrorSuppressor, {
-  get: () => superDooperErrorSuppressor,
+  get: (target, property) => {
+    if (property === Symbol.toPrimitive) {
+      // convert to primitive for e.g. console.log
+      return () => "superDooperErrorSuppressor"
+    }
+    return superDooperErrorSuppressor
+  },
 })
 
 module.exports = function getDebugInfo({
@@ -19,11 +25,13 @@ module.exports = function getDebugInfo({
   }
   return info
 }
+module.exports.getModuleDebugInfo = getModuleDebugInfo
 
 function getModuleDebugInfo(mod) {
   const modInfo = {
     instances: Object.keys(mod.instances),
     factories: {},
+    modules: {},
   }
   Object.keys(mod.factories)
     .forEach((id) => {
@@ -41,6 +49,10 @@ function getModuleDebugInfo(mod) {
           return superDooperErrorSuppressor
         },
       }))
+    })
+  Object.keys(mod.modules)
+    .forEach((id) => {
+      modInfo.modules[id] = getModuleDebugInfo(mod.modules[id])
     })
 
   return modInfo

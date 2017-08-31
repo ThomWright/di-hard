@@ -18,6 +18,9 @@ test("listing registrations and their dependencies", t => {
 
   child.registerValue("E", "e")
 
+  child.registerSubmodule("M")
+    .registerValue("MV", "mv")
+
   const tree = child.getDebugInfo()
 
   t.deepEqual(tree, {
@@ -34,6 +37,13 @@ test("listing registrations and their dependencies", t => {
         },
       },
       instances: ["E"],
+      modules: {
+        M: {
+          factories: {},
+          instances: ["MV"],
+          modules: {},
+        },
+      },
     },
     parentContainer: {
       name: "parent",
@@ -49,6 +59,7 @@ test("listing registrations and their dependencies", t => {
           },
         },
         instances: [],
+        modules: {},
       },
     },
   })
