@@ -217,7 +217,7 @@ test("submodule - value within a submodule", t => {
   t.regex(error.message, /valueId/, "should specify the problem ID")
 })
 
-test("reserved characters", t => {
+test("character whitelist", t => {
   const container = createContainer("container-with-submodule")
 
   const error = t.throws(
@@ -225,6 +225,5 @@ test("reserved characters", t => {
     Error,
     "should not be able to register IDs which include '.'"
   )
-  t.regex(error.message, /reserved character/, "should state the problem")
-  t.regex(error.message, /\./, "should show the problem character")
+  t.regex(error.message, /invalid characters/, "should state the problem")
 })

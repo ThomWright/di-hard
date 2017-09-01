@@ -1,5 +1,5 @@
 
-const createModule = require("./container")
+const createPublicApi = require("./container")
 
-module.exports = createModule()
+module.exports = createPublicApi()
 module.exports.lifetimes = require("./lifetimes")

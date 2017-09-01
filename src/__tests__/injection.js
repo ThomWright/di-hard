@@ -43,3 +43,30 @@ test("unknown dependency key", t => {
   )
   t.regex(error.message, /dependencyName/, "should specify unknown key")
 })
+
+
+test("between submodules", t => {
+  const componentDefinition = ({
+    submodule: {
+      dependency,
+    },
+  }) => {
+    return {
+      getInjectedDependency() {
+        return dependency
+      },
+    }
+  }
+
+  const dependencyDefinition = () => "dependencyInstance"
+
+  const container = createContainer("root")
+  container
+    .registerSubmodule("submodule")
+      .registerFactory("testComponent", componentDefinition)
+      .registerFactory("dependency", dependencyDefinition)
+
+  const instance = container.resolve("submodule.testComponent")
+  const dep = instance.getInjectedDependency()
+  t.is(dep, "dependencyInstance", "should inject an instance of the requested dependency from the specified submodule")
+})

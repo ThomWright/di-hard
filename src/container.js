@@ -1,6 +1,7 @@
 const lifetimes = require("./lifetimes")
 const createResolver = require("./resolver")
 const getDebugInfo = require("./debug-info")
+const {getModuleDebugInfo} = getDebugInfo
 
 module.exports = () => {
   return {
@@ -20,21 +21,22 @@ function _createContainer({
   containerName,
   parentContainer,
 }) {
-  const rootModule = {
-    instances: {},
-    factories: {},
-    modules: {},
-  }
+  const rootModule = createModule()
 
   const internal = {
     resolve(id, previousDependencyPath = [], previouslySearchedContainers = []) {
+      const parts = id.split(".")
+      const modulePath = parts.slice(0, -1)
+      const componentId = parts[parts.length - 1]
       return createResolver({
         containerName,
+        forComponent: [],
         parentContainer,
         rootModule,
+        fromModule: modulePath,
         previousDependencyPath,
         previouslySearchedContainers,
-      })[id]
+      })[componentId]
     },
 
     getDebugInfo() {
@@ -89,18 +91,16 @@ function _createContainer({
         if (value === undefined && arguments.length < 2) {
           throw new Error(`Can't register '${id}' - value not defined`)
         }
-        currentModule.instances[id] = value
-
+        currentModule.instances[id] = {
+          instance: value,
+        }
         return registrationApi
       },
+
       registerSubmodule(id) {
         const currentModule = getSubModule(moduleContext, rootModule)
         check(currentModule, id)
-        currentModule.modules[id] = {
-          instances: {},
-          factories: {},
-          modules: {},
-        }
+        currentModule.modules[id] = createModule()
         return createRegistrationApi([...moduleContext, id])
       },
     }
@@ -139,21 +139,21 @@ function _createContainer({
   )
 }
 
-function check(module, id) {
-  if (module.factories.hasOwnProperty(id)) {
+function check(mod, id) {
+  if (mod.factories.hasOwnProperty(id)) {
     throw new Error(`Cannot register '${id}' - already registered as a factory`)
   }
-  if (module.instances.hasOwnProperty(id)) {
+  if (mod.instances.hasOwnProperty(id)) {
     throw new Error(`Cannot register '${id}' - already registered as a value`)
   }
-  if (module.modules.hasOwnProperty(id)) {
+  if (mod.modules.hasOwnProperty(id)) {
     throw new Error(`Cannot register '${id}' - already registered as a submodule`)
   }
   if (typeof id !== "string") {
     throw new Error(`Cannot register '${id}' - ID must be a string`)
   }
-  if (id.includes(".")) {
-    throw new Error(`cannot register '${id}' - '.' is a reserved character`)
+  if (!/^\w*$/.test(id)) {
+    throw new Error(`Cannot register '${id}' - invalid characters. Allowed characters: 'a-z', 'A-Z', '0-9' and '_'`)
   }
 }
 
@@ -163,4 +163,17 @@ function getSubModule(modulePath, currentModule) {
     targetModule = targetModule.modules[modId]
   })
   return targetModule
+}
+
+function createModule() {
+  const mod = {
+    instances: {},
+    factories: {},
+    modules: {},
+  }
+  // useful for debugging:
+  mod.toString = () => JSON.stringify(getModuleDebugInfo(mod))
+  mod.valueOf = () => JSON.stringify(getModuleDebugInfo(mod))
+  mod[Symbol.toPrimitive] = () => JSON.stringify(getModuleDebugInfo(mod))
+  return  mod
 }
