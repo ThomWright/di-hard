@@ -5,6 +5,16 @@ const {TRANSIENT, REGISTRATION} = require("../lifetimes")
 const NOOP_STREAM = {write: () => {}}
 const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
 
+test("accessing an invalid lifetime", t => {
+  const lifetimes = require("../lifetimes")
+  const error = t.throws(
+    () => lifetimes.notARealLifetime,
+    Error,
+    "should not be able to access non-existant lifetimes"
+  )
+  t.regex(error.message, /notARealLifetime/, "should specify the problem lifetime")
+})
+
 test("default", t => {
   let instances = 0
   const container = createContainer("root")

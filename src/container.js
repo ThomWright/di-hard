@@ -77,7 +77,7 @@ function _createContainer({
         }
         const currentModule = getSubModule(moduleContext, rootModule)
         check(currentModule, id)
-        if (lifetime && !lifetimes.hasOwnProperty(lifetime)) {
+        if (lifetime && !lifetime in lifetimes) {
           throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
         }
         if (arguments.length >= 3 && !lifetime) {
