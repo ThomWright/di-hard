@@ -1,3 +1,4 @@
+const {formatModulePath} = require("./modules")
 
 // Do whatever you want with this, it shouldn't throw any Errors
 const superDooperErrorSuppressor = new Proxy(() => superDooperErrorSuppressor, {
@@ -29,7 +30,7 @@ module.exports.getModuleDebugInfo = getModuleDebugInfo
 
 function getModuleDebugInfo(mod) {
   const modInfo = {
-    modulePath: mod.modulePath.join("."),
+    modulePath: formatModulePath(mod.modulePath),
     instances: Object.keys(mod.instances),
     factories: {},
     modules: {},

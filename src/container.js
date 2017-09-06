@@ -1,7 +1,13 @@
 const lifetimes = require("./lifetimes")
 const createResolver = require("./resolver")
+const {
+  createModule,
+  getSubModule,
+  parseModulePath,
+  splitModulePath,
+  joinModulePath,
+} = require("./modules")
 const getDebugInfo = require("./debug-info")
-const {getModuleDebugInfo} = getDebugInfo
 
 module.exports = () => {
   return {
@@ -25,10 +31,9 @@ function _createContainer({
 
   const internal = {
     resolve(formattedModulePath, previousDependencyPath = [], previouslySearchedContainers = []) {
-      const fullComponentPath = formattedModulePath.split(".")
-      const modulePath = fullComponentPath.slice(0, -1)
-      const componentId = fullComponentPath[fullComponentPath.length - 1]
-      const mod = getSubModule(modulePath, rootModule)
+      const fullComponentPath = parseModulePath(formattedModulePath)
+      const {parentModule, componentId} = splitModulePath(fullComponentPath)
+      const mod = getSubModule(parentModule, rootModule)
       return createResolver({
         containerName,
         forComponent: {modulePath: []},
@@ -82,7 +87,7 @@ function _createContainer({
           lifetime = lifetimes.TRANSIENT
         }
         currentModule.factories[id] = {
-          modulePath: [...moduleContext, id],
+          modulePath: joinModulePath(moduleContext, id),
           factory,
           lifetime,
         }
@@ -97,7 +102,7 @@ function _createContainer({
           throw new Error(`Can't register '${id}' - value not defined`)
         }
         currentModule.instances[id] = {
-          modulePath: [...moduleContext, id],
+          modulePath: joinModulePath(moduleContext, id),
           instance: value,
         }
         return registrationApi
@@ -106,7 +111,7 @@ function _createContainer({
       registerSubmodule(id) {
         const currentModule = getSubModule(moduleContext, rootModule)
         check(currentModule, id)
-        const modulePath = [...moduleContext, id]
+        const modulePath = joinModulePath(moduleContext, id)
         currentModule.modules[id] = createModule(modulePath)
         return createRegistrationApi(modulePath)
       },
@@ -162,26 +167,4 @@ function check(mod, id) {
   if (!/^\w*$/.test(id)) {
     throw new Error(`Cannot register '${id}' - invalid characters. Allowed characters: 'a-z', 'A-Z', '0-9' and '_'`)
   }
-}
-
-function getSubModule(modulePath, currentModule) {
-  let targetModule = currentModule
-  modulePath.forEach((modId) => {
-    targetModule = targetModule.modules[modId]
-  })
-  return targetModule
-}
-
-function createModule(modulePath) {
-  const mod = {
-    modulePath,
-    instances: {},
-    factories: {},
-    modules: {},
-  }
-  // useful for debugging:
-  mod.toString = () => JSON.stringify(getModuleDebugInfo(mod))
-  mod.valueOf = () => JSON.stringify(getModuleDebugInfo(mod))
-  mod[Symbol.toPrimitive] = () => JSON.stringify(getModuleDebugInfo(mod))
-  return  mod
 }
