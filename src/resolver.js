@@ -9,39 +9,38 @@ module.exports = function createResolver({
   previousDependencyPath = [],
   previouslySearchedContainers = [],
 }) {
+
   return new Proxy({}, {
     get(target, propertyName) {
       const id = propertyName
-      const fqn = [...fromModule, id].join(".")
-      // console.log(`Resolving: '${fqn}' into '${forComponent.join(".")}'`)
+      const formattedModulePath = formatModulePath([...fromModule.modulePath, id])
+      // console.log(`Resolving: '${formattedModulePath}' into '${formatModulePath(forComponent.modulePath)}'`)
 
       // check for circular dependencies
-      const dependencyPath = [...previousDependencyPath, {fqn, containerName}]
-      if (previousDependencyPath.find(sameIdAndContainer({fqn, containerName}))) {
+      const dependencyPath = [...previousDependencyPath, {formattedModulePath, containerName}]
+      if (previousDependencyPath.find(sameIdAndContainer({formattedModulePath, containerName}))) {
         throw new Error(`Circular dependencies: '${formatDepPath(dependencyPath)}'`)
       }
 
-      const mod = getSubModule(fromModule, rootModule)
-
       // return an existing instance from this container if we have one
-      if (mod.instances.hasOwnProperty(id)) {
-        return mod.instances[id].instance
+      if (fromModule.instances.hasOwnProperty(id)) {
+        return fromModule.instances[id].instance
       }
 
-      if (mod.modules[id]) {
+      if (fromModule.modules[id]) {
         // return a resolver for the specified submodule
         return createResolver({
           containerName,
           forComponent,
           parentContainer,
           rootModule,
-          fromModule: [...fromModule, id],
+          fromModule: fromModule.modules[id],
           previousDependencyPath,
         })
       }
 
       // try to create a new instance
-      const factoryReg = mod.factories[id]
+      const factoryReg = fromModule.factories[id]
       if (!factoryReg) {
         const searchedContainers = [...previouslySearchedContainers, containerName]
         if (parentContainer) {
@@ -53,7 +52,7 @@ module.exports = function createResolver({
           )
         }
         throw new Error(
-          `Nothing registered for '${fqn}' in containers: '${searchedContainers.join(" -> ")}'.` +
+          `Nothing registered for '${formattedModulePath}' in containers: '${searchedContainers.join(" -> ")}'.` +
           ` Trying to resolve: '${formatDepPath(dependencyPath)}'.`
         )
       }
@@ -62,17 +61,17 @@ module.exports = function createResolver({
       const {factory, lifetime} = factoryReg
       const resolver = createResolver({
         containerName,
-        forComponent: [...fromModule, id],
+        forComponent: factoryReg,
         parentContainer,
         rootModule,
-        fromModule: [],
+        fromModule: rootModule,
         previousDependencyPath: dependencyPath,
       })
       const instance = factory(resolver)
 
       if (lifetime !== lifetimes.TRANSIENT) {
         // cache the instance for the lifetime of this containerName
-        mod.instances[id] = {
+        fromModule.instances[id] = {
           instance,
         }
       }
@@ -86,20 +85,16 @@ module.exports = function createResolver({
 }
 
 function formatDepPath(dependencyPath) {
-  return dependencyPath.map(d => `${d.fqn} (${d.containerName})`).join(" -> ")
+  return dependencyPath.map(d => `${d.formattedModulePath} (${d.containerName})`).join(" -> ")
 }
 
-function sameIdAndContainer({fqn, containerName}) {
+function formatModulePath(modPath) {
+  return modPath.join(".")
+}
+
+function sameIdAndContainer({formattedModulePath, containerName}) {
   return (other) => {
-    return other.fqn === fqn
+    return other.formattedModulePath === formattedModulePath
       && other.containerName === containerName
   }
-}
-
-function getSubModule(modulePath, currentModule) {
-  let targetModule = currentModule
-  modulePath.forEach((modId) => {
-    targetModule = targetModule.modules[modId]
-  })
-  return targetModule
 }

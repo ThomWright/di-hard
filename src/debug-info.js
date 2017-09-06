@@ -29,6 +29,7 @@ module.exports.getModuleDebugInfo = getModuleDebugInfo
 
 function getModuleDebugInfo(mod) {
   const modInfo = {
+    modulePath: mod.modulePath.join("."),
     instances: Object.keys(mod.instances),
     factories: {},
     modules: {},

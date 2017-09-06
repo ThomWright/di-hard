@@ -21,19 +21,20 @@ function _createContainer({
   containerName,
   parentContainer,
 }) {
-  const rootModule = createModule()
+  const rootModule = createModule([])
 
   const internal = {
-    resolve(id, previousDependencyPath = [], previouslySearchedContainers = []) {
-      const parts = id.split(".")
-      const modulePath = parts.slice(0, -1)
-      const componentId = parts[parts.length - 1]
+    resolve(formattedModulePath, previousDependencyPath = [], previouslySearchedContainers = []) {
+      const fullComponentPath = formattedModulePath.split(".")
+      const modulePath = fullComponentPath.slice(0, -1)
+      const componentId = fullComponentPath[fullComponentPath.length - 1]
+      const mod = getSubModule(modulePath, rootModule)
       return createResolver({
         containerName,
-        forComponent: [],
+        forComponent: {modulePath: []},
         parentContainer,
         rootModule,
-        fromModule: modulePath,
+        fromModule: mod,
         previousDependencyPath,
         previouslySearchedContainers,
       })[componentId]
@@ -80,7 +81,11 @@ function _createContainer({
         if (!lifetime) {
           lifetime = lifetimes.TRANSIENT
         }
-        currentModule.factories[id] = {factory, lifetime}
+        currentModule.factories[id] = {
+          modulePath: [...moduleContext, id],
+          factory,
+          lifetime,
+        }
 
         return registrationApi
       },
@@ -92,6 +97,7 @@ function _createContainer({
           throw new Error(`Can't register '${id}' - value not defined`)
         }
         currentModule.instances[id] = {
+          modulePath: [...moduleContext, id],
           instance: value,
         }
         return registrationApi
@@ -100,8 +106,9 @@ function _createContainer({
       registerSubmodule(id) {
         const currentModule = getSubModule(moduleContext, rootModule)
         check(currentModule, id)
-        currentModule.modules[id] = createModule()
-        return createRegistrationApi([...moduleContext, id])
+        const modulePath = [...moduleContext, id]
+        currentModule.modules[id] = createModule(modulePath)
+        return createRegistrationApi(modulePath)
       },
     }
     return registrationApi
@@ -165,8 +172,9 @@ function getSubModule(modulePath, currentModule) {
   return targetModule
 }
 
-function createModule() {
+function createModule(modulePath) {
   const mod = {
+    modulePath,
     instances: {},
     factories: {},
     modules: {},

@@ -20,12 +20,14 @@ test("listing registrations and their dependencies", t => {
 
   child.registerSubmodule("M")
     .registerValue("MV", "mv")
+    .registerSubmodule("N")
 
   const tree = child.getDebugInfo()
 
   t.deepEqual(tree, {
     name: "child",
     module: {
+      modulePath: "",
       factories: {
         C: {
           lifetime: TRANSIENT,
@@ -39,15 +41,24 @@ test("listing registrations and their dependencies", t => {
       instances: ["E"],
       modules: {
         M: {
+          modulePath: "M",
           factories: {},
           instances: ["MV"],
-          modules: {},
+          modules: {
+            N: {
+              modulePath: "M.N",
+              factories: {},
+              instances: [],
+              modules: {},
+            },
+          },
         },
       },
     },
     parentContainer: {
       name: "parent",
       module: {
+        modulePath: "",
         factories: {
           A: {
             lifetime: REGISTRATION,
