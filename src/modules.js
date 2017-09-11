@@ -8,9 +8,11 @@ module.exports = {
 
   splitModulePath,
   joinModulePath,
+
+  isPathEqual,
 }
 
-function createModule(modulePath) {
+function createModule(modulePath = []) {
   const mod = {
     modulePath,
     instances: {},
@@ -44,4 +46,8 @@ function splitModulePath(fullComponentPath) {
   const parentModule = fullComponentPath.slice(0, -1)
   const componentId = fullComponentPath[fullComponentPath.length - 1]
   return {parentModule, componentId}
+}
+
+function isPathEqual(modulePath1, modulePath2) {
+  return formatModulePath(modulePath1) === formatModulePath(modulePath2)
 }

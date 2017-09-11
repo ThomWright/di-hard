@@ -27,7 +27,7 @@ function _createContainer({
   containerName,
   parentContainer,
 }) {
-  const rootModule = createModule([])
+  const rootModule = createModule()
 
   const internal = {
     resolve(formattedModulePath, previousDependencyPath = [], previouslySearchedContainers = []) {

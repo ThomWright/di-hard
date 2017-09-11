@@ -1,4 +1,8 @@
-const {formatModulePath, joinModulePath} = require("./modules")
+const {
+  formatModulePath,
+  joinModulePath,
+  isPathEqual: sameModulePath,
+} = require("./modules")
 const lifetimes = require("./lifetimes")
 
 module.exports = function createResolver({
@@ -14,12 +18,13 @@ module.exports = function createResolver({
   return new Proxy({}, {
     get(target, propertyName) {
       const id = propertyName
-      const formattedModulePath = formatModulePath(joinModulePath(fromModule.modulePath, id))
+      const componentModulePath = joinModulePath(fromModule.modulePath, id)
+      const formattedModulePath = formatModulePath(componentModulePath)
       // console.log(`Resolving: '${formattedModulePath}' into '${formatModulePath(forComponent.modulePath)}'`)
 
       // check for circular dependencies
-      const dependencyPath = [...previousDependencyPath, {formattedModulePath, containerName}]
-      if (previousDependencyPath.find(sameIdAndContainer({formattedModulePath, containerName}))) {
+      const dependencyPath = [...previousDependencyPath, {componentModulePath, containerName}]
+      if (previousDependencyPath.find(sameIdAndContainer({componentModulePath, containerName}))) {
         throw new Error(`Circular dependencies: '${formatDepPath(dependencyPath)}'`)
       }
 
@@ -86,12 +91,14 @@ module.exports = function createResolver({
 }
 
 function formatDepPath(dependencyPath) {
-  return dependencyPath.map(d => `${d.formattedModulePath} (${d.containerName})`).join(" -> ")
+  return dependencyPath
+    .map(d => `${formatModulePath(d.componentModulePath)} (${d.containerName})`)
+    .join(" -> ")
 }
 
-function sameIdAndContainer({formattedModulePath, containerName}) {
+function sameIdAndContainer({componentModulePath, containerName}) {
   return (other) => {
-    return other.formattedModulePath === formattedModulePath
+    return sameModulePath(other.componentModulePath, componentModulePath)
       && other.containerName === containerName
   }
 }
