@@ -2,6 +2,11 @@ const {
   formatModulePath,
   joinModulePath,
   isPathEqual: sameModulePath,
+  getInstance,
+  getFactory,
+  getModule,
+  getModulePath,
+  cacheInstance,
 } = require("./modules")
 const lifetimes = require("./lifetimes")
 
@@ -16,9 +21,8 @@ module.exports = function createResolver({
 }) {
 
   return new Proxy({}, {
-    get(target, propertyName) {
-      const id = propertyName
-      const componentModulePath = joinModulePath(fromModule.modulePath, id)
+    get(_, id) {
+      const componentModulePath = joinModulePath(getModulePath(fromModule), id)
       const formattedModulePath = formatModulePath(componentModulePath)
       // console.log(`Resolving: '${formattedModulePath}' into '${formatModulePath(forComponent.modulePath)}'`)
 
@@ -28,61 +32,65 @@ module.exports = function createResolver({
         throw new Error(`Circular dependencies: '${formatDepPath(dependencyPath)}'`)
       }
 
-      // return an existing instance from this container if we have one
-      if (fromModule.instances.hasOwnProperty(id)) {
-        return fromModule.instances[id].instance
-      }
-
-      if (fromModule.modules[id]) {
-        // return a resolver for the specified submodule
-        return createResolver({
-          containerName,
-          forComponent,
-          parentContainer,
-          rootModule,
-          fromModule: fromModule.modules[id],
-          previousDependencyPath,
-        })
-      }
-
-      // try to create a new instance
-      const factoryReg = fromModule.factories[id]
-      if (!factoryReg) {
-        const searchedContainers = [...previouslySearchedContainers, containerName]
-        if (parentContainer) {
-          // if we can't do it in this container, see if a parentContainer can
-          return parentContainer.resolve(
-            id,
-            previousDependencyPath,
-            searchedContainers
-          )
+      {
+        // return an existing instance from this container if we have one
+        const instanceReg = getInstance(fromModule, id)
+        if (instanceReg) {
+          return instanceReg.instance
         }
+      }
+
+      {
+        const mod = getModule(fromModule, id)
+        if (mod) {
+          // return a resolver for the specified submodule
+          return createResolver({
+            containerName,
+            forComponent,
+            parentContainer,
+            rootModule,
+            fromModule: mod,
+            previousDependencyPath,
+          })
+        }
+      }
+
+      {
+        // try to create a new instance
+        const factoryReg = getFactory(fromModule, id)
+        if (factoryReg) {
+          // create a new instance
+          const {factory, lifetime} = factoryReg
+          const resolver = createResolver({
+            containerName,
+            forComponent: factoryReg,
+            parentContainer,
+            rootModule,
+            fromModule: rootModule,
+            previousDependencyPath: dependencyPath,
+          })
+          const instance = factory(resolver)
+
+          if (lifetime === lifetimes.REGISTRATION) {
+            cacheInstance(fromModule, id, {instance})
+          }
+          return instance
+        }
+      }
+
+      // if we can't resolve anything in this container, see if a parentContainer can
+      const searchedContainers = [...previouslySearchedContainers, containerName]
+      if (!parentContainer) {
         throw new Error(
           `Nothing registered for '${formattedModulePath}' in containers: '${searchedContainers.join(" -> ")}'.` +
           ` Trying to resolve: '${formatDepPath(dependencyPath)}'.`
         )
       }
-
-      // create a new instance
-      const {factory, lifetime} = factoryReg
-      const resolver = createResolver({
-        containerName,
-        forComponent: factoryReg,
-        parentContainer,
-        rootModule,
-        fromModule: rootModule,
-        previousDependencyPath: dependencyPath,
-      })
-      const instance = factory(resolver)
-
-      if (lifetime !== lifetimes.TRANSIENT) {
-        // cache the instance for the lifetime of this containerName
-        fromModule.instances[id] = {
-          instance,
-        }
-      }
-
-      return instance
+      return parentContainer.resolve(
+        id,
+        previousDependencyPath,
+        searchedContainers
+      )
     },
     set(target, name, value) {
       throw new Error(`Can't set values on the resolver. Attempted to set '${name}' to '${value}'.`)

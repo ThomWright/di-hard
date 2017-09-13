@@ -5,7 +5,7 @@ const {
   getSubModule,
   parseModulePath,
   splitModulePath,
-  joinModulePath,
+  createRegistrationApi: createModuleRegistrationApi,
 } = require("./modules")
 const getDebugInfo = require("./debug-info")
 
@@ -32,11 +32,11 @@ function _createContainer({
   const internal = {
     resolve(formattedModulePath, previousDependencyPath = [], previouslySearchedContainers = []) {
       const fullComponentPath = parseModulePath(formattedModulePath)
-      const {parentModule, componentId} = splitModulePath(fullComponentPath)
-      const mod = getSubModule(parentModule, rootModule)
+      const {parentModulePath, componentId} = splitModulePath(fullComponentPath)
+      const mod = getSubModule(rootModule, parentModulePath)
       return createResolver({
         containerName,
-        forComponent: {modulePath: []},
+        forComponent: rootModule,
         parentContainer,
         rootModule,
         fromModule: mod,
@@ -69,14 +69,13 @@ function _createContainer({
     },
   }
 
-  function createRegistrationApi(moduleContext = []) {
+  function createRegistrationApi(moduleRegistration) {
     const registrationApi = {
       registerFactory(id, factory, lifetime) {
         if (typeof factory !== "function") {
           throw new Error(`Can't register '${id}' as a factory - it is not a function`)
         }
-        const currentModule = getSubModule(moduleContext, rootModule)
-        check(currentModule, id)
+
         if (lifetime && !lifetime in lifetimes) {
           throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
         }
@@ -86,34 +85,31 @@ function _createContainer({
         if (!lifetime) {
           lifetime = lifetimes.TRANSIENT
         }
-        currentModule.factories[id] = {
-          modulePath: joinModulePath(moduleContext, id),
+
+        moduleRegistration.registerFactory(id, {
           factory,
           lifetime,
-        }
+        })
 
         return registrationApi
       },
 
       registerValue(id, value) {
-        const currentModule = getSubModule(moduleContext, rootModule)
-        check(currentModule, id)
         if (value === undefined && arguments.length < 2) {
           throw new Error(`Can't register '${id}' - value not defined`)
         }
-        currentModule.instances[id] = {
-          modulePath: joinModulePath(moduleContext, id),
+
+        moduleRegistration.registerInstance(id, {
           instance: value,
-        }
+        })
+
         return registrationApi
       },
 
       registerSubmodule(id) {
-        const currentModule = getSubModule(moduleContext, rootModule)
-        check(currentModule, id)
-        const modulePath = joinModulePath(moduleContext, id)
-        currentModule.modules[id] = createModule(modulePath)
-        return createRegistrationApi(modulePath)
+        moduleRegistration.registerModule(id, createModule())
+
+        return createRegistrationApi(moduleRegistration.forSubModule(id))
       },
     }
     return registrationApi
@@ -121,7 +117,7 @@ function _createContainer({
 
   return Object.assign(
     {},
-    createRegistrationApi(),
+    createRegistrationApi(createModuleRegistrationApi(rootModule)),
     {
       resolve(id) {
         return internal.resolve(id)
@@ -149,22 +145,4 @@ function _createContainer({
       },
     }
   )
-}
-
-function check(mod, id) {
-  if (mod.factories.hasOwnProperty(id)) {
-    throw new Error(`Cannot register '${id}' - already registered as a factory`)
-  }
-  if (mod.instances.hasOwnProperty(id)) {
-    throw new Error(`Cannot register '${id}' - already registered as a value`)
-  }
-  if (mod.modules.hasOwnProperty(id)) {
-    throw new Error(`Cannot register '${id}' - already registered as a submodule`)
-  }
-  if (typeof id !== "string") {
-    throw new Error(`Cannot register '${id}' - ID must be a string`)
-  }
-  if (!/^\w*$/.test(id)) {
-    throw new Error(`Cannot register '${id}' - invalid characters. Allowed characters: 'a-z', 'A-Z', '0-9' and '_'`)
-  }
 }
