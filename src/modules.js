@@ -1,30 +1,35 @@
 
+const ROOT_MODULE_PATH = []
+
+// TODO could use symbols to really hide the internal structure?
 const INSTANCES_PROP = "instances"
 const FACTORIES_PROP = "factories"
 const MODULES_PROP = "modules"
 
+const getInstance = get(INSTANCES_PROP)
+const getFactory = get(FACTORIES_PROP)
+const getModule = get(MODULES_PROP)
+
 module.exports = {
   createModule,
-  getSubModule,
+
   createRegistrationApi,
   cacheInstance,
 
-  getInstance: get(INSTANCES_PROP),
-  getFactory: get(FACTORIES_PROP),
-  getModule: get(MODULES_PROP),
+  getSubModule,
+  getComponent,
+  getInstance,
+  getFactory,
+  getModule,
 
   getModulePath,
-
   formatModulePath,
   parseModulePath,
-
   splitModulePath,
   joinModulePath,
-
   isPathEqual,
+  getLowestCommonAncester,
 }
-
-const ROOT_MODULE_PATH = []
 
 function createModule() {
   const mod = {
@@ -41,15 +46,34 @@ function getModulePath(mod) {
 }
 
 function getSubModule(currentModule, modulePath) {
+  if (modulePath.length === 0) {
+    return currentModule
+  }
   let targetModule = currentModule
   modulePath.forEach((modId) => {
-    targetModule = targetModule[MODULES_PROP][modId]
+    targetModule = getModule(targetModule, modId) // targetModule[MODULES_PROP][modId]
   })
   return targetModule
 }
 
+function getComponent(currentModule, modulePath) {
+  if (modulePath.length === 0) {
+    return currentModule
+  }
+  const {parentModulePath, componentId} = splitModulePath(modulePath)
+  let parentModule = currentModule
+  parentModulePath.forEach((modId) => {
+    parentModule = getModule(parentModule, modId)
+  })
+  return (
+    getModule(parentModule, componentId)
+    || getFactory(parentModule, componentId)
+    || getInstance(parentModule, componentId)
+  )
+}
+
 function get(type) {
-  return (mod, id) => mod[type][id]
+  return (mod, id) => mod[type] && mod[type][id]
 }
 
 function createRegistrationApi(rootModule) {
@@ -110,8 +134,11 @@ function parseModulePath(formattedModulePath) {
   return formattedModulePath.split(".")
 }
 
-function joinModulePath(modulePath, componentId) {
-  return [...modulePath, componentId]
+function joinModulePath(modulePath, rest) {
+  if (Array.isArray(rest)) {
+    return [...modulePath, ...rest]
+  }
+  return [...modulePath, rest]
 }
 
 function splitModulePath(fullComponentPath) {
@@ -122,4 +149,23 @@ function splitModulePath(fullComponentPath) {
 
 function isPathEqual(modulePath1, modulePath2) {
   return formatModulePath(modulePath1) === formatModulePath(modulePath2)
+}
+
+function getLowestCommonAncester(modulePath1, modulePath2) {
+  const commonAncestorIndex = lowestCommonAncestorIndex(modulePath1, modulePath2)
+  return take(commonAncestorIndex, modulePath1)
+}
+
+function take(n, array) {
+  return array.slice(0, n < 0 ? Infinity : n)
+}
+
+function lowestCommonAncestorIndex(l1, l2) {
+  for (let i = 0; i < l1.length; i++) {
+    if (l1[i] === l2[i]) {
+      continue
+    }
+    return i
+  }
+  return 0
 }
