@@ -130,7 +130,7 @@ test("factory - with same name as value", t => {
 
 test("factory - with same name as submodule", t => {
   const container = createContainer("root")
-  container.registerSubmodule("uniqueId", "value")
+  container.registerSubmodule("uniqueId")
 
   const error = t.throws(
     () => container.registerFactory("uniqueId", () => {}),
@@ -176,7 +176,7 @@ test("submodule", t => {
 
 test("submodule - with same name as factory", t => {
   const container = createContainer("root")
-  container.registerSubmodule("uniqueId", "value")
+  container.registerSubmodule("uniqueId")
 
   const error = t.throws(
     () => container.registerFactory("uniqueId", () => {}),
@@ -189,7 +189,7 @@ test("submodule - with same name as factory", t => {
 
 test("submodule - with same name as value", t => {
   const container = createContainer("root")
-  container.registerSubmodule("uniqueId", "value")
+  container.registerSubmodule("uniqueId")
 
   const error = t.throws(
     () => container.registerValue("uniqueId", () => {}),

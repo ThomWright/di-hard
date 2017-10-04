@@ -21,14 +21,15 @@ module.exports = {
   getInstance,
   getFactory,
   getModule,
+  exists,
 
   getModulePath,
   formatModulePath,
   parseModulePath,
   splitModulePath,
+  getParentPath,
   joinModulePath,
   isPathEqual,
-  getLowestCommonAncester,
 }
 
 function createModule() {
@@ -51,7 +52,7 @@ function getSubModule(currentModule, modulePath) {
   }
   let targetModule = currentModule
   modulePath.forEach((modId) => {
-    targetModule = getModule(targetModule, modId) // targetModule[MODULES_PROP][modId]
+    targetModule = getModule(targetModule, modId)
   })
   return targetModule
 }
@@ -70,6 +71,12 @@ function getComponent(currentModule, modulePath) {
     || getFactory(parentModule, componentId)
     || getInstance(parentModule, componentId)
   )
+}
+
+function exists(mod, id) {
+  return !!(getModule(mod, id)
+  || getFactory(mod, id)
+  || getInstance(mod, id))
 }
 
 function get(type) {
@@ -142,30 +149,15 @@ function joinModulePath(modulePath, rest) {
 }
 
 function splitModulePath(fullComponentPath) {
-  const parentModulePath = fullComponentPath.slice(0, -1)
+  const parentModulePath = getParentPath(fullComponentPath)
   const componentId = fullComponentPath[fullComponentPath.length - 1]
   return {parentModulePath, componentId}
 }
 
+function getParentPath(fullComponentPath) {
+  return fullComponentPath.slice(0, -1)
+}
+
 function isPathEqual(modulePath1, modulePath2) {
   return formatModulePath(modulePath1) === formatModulePath(modulePath2)
-}
-
-function getLowestCommonAncester(modulePath1, modulePath2) {
-  const commonAncestorIndex = lowestCommonAncestorIndex(modulePath1, modulePath2)
-  return take(commonAncestorIndex, modulePath1)
-}
-
-function take(n, array) {
-  return array.slice(0, n < 0 ? Infinity : n)
-}
-
-function lowestCommonAncestorIndex(l1, l2) {
-  for (let i = 0; i < l1.length; i++) {
-    if (l1[i] === l2[i]) {
-      continue
-    }
-    return i
-  }
-  return 0
 }

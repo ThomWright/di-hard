@@ -1,7 +1,6 @@
 const {
   getComponent,
-  splitModulePath,
-  getLowestCommonAncester,
+  getParentPath,
   isPathEqual: sameModulePath,
 } = require("./modules")
 
@@ -22,33 +21,51 @@ module.exports = {
   forRootModule,
   makePublic,
   makePrivate,
+  addVisibility,
 }
 
 function forRootModule(rootModule) {
   return (fromPath) => (testPath) => {
-    const {
-      parentModulePath: ownerModulePath,
-    } = splitModulePath(fromPath)
+    const parentModulePath = getParentPath(fromPath)
 
-    const commonAncestorPath = getLowestCommonAncester(fromPath, testPath)
-    const commonAncestor = getComponent(rootModule, commonAncestorPath)
+    let isCommonAncestor = true
+    for (let i = 0; i < testPath.length; i++) {
+      const currentTestPath = take(i + 1, testPath)
+      if (sameModulePath(parentModulePath, getParentPath(currentTestPath))) {
+        // we can see things in the same module, even if they're private
+        continue
+      }
 
-    let offset = commonAncestorPath.length
-    let testComponent = getComponent(commonAncestor, [testPath[offset++]])
+      if (testPath[i] !== fromPath[i]) {
+        isCommonAncestor = false
+      }
+      if (isCommonAncestor) {
+        // we can see common ancestors, even if they're private
+        continue
+      }
 
-    if (sameModulePath(commonAncestorPath, ownerModulePath)) {
-      // we can see private components in the same module
-      testComponent = getComponent(testComponent, [testPath[offset++]])
-    }
-
-    while (testComponent !== undefined) {
+      const testComponent = getComponent(rootModule, currentTestPath)
       if (testComponent.visibility === visibilities.PRIVATE) {
         return false
       }
-      testComponent = getComponent(testComponent, [testPath[offset++]])
     }
 
-    return  true
+    return true
+  }
+}
+
+function take(n, array) {
+  return array.slice(0, n < 0 ? Infinity : n)
+}
+
+function addVisibility(visibility, component) {
+  switch (visibility) {
+  case visibilities.PUBLIC:
+    return makePublic(component)
+  case visibilities.PRIVATE:
+    return makePrivate(component)
+  default:
+    throw new Error(`'${visibility}' isn't a real visibility mate`)
   }
 }
 

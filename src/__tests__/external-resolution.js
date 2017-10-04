@@ -1,6 +1,7 @@
 const test = require("ava")
 
 const createContainerModule = require("../container")
+const {visibilities} = require("../visibility")
 
 const NOOP_STREAM = {write: () => {}}
 const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
@@ -35,14 +36,30 @@ test("falsy instance", t => {
   t.is(value, undefined)
 })
 
-test("value from inside a submodule", t => {
+test("public value from inside a public submodule", t => {
+  const container = createContainer("container-with-submodule")
+
+  container
+    .registerSubmodule("submodule", visibilities.PUBLIC)
+    .registerValue("value", "some-value", visibilities.PUBLIC)
+
+  const value = container.resolve("submodule.value")
+
+  t.is(value, "some-value")
+})
+
+test("public value from inside a private submodule", t => {
   const container = createContainer("container-with-submodule")
 
   container
     .registerSubmodule("submodule")
     .registerValue("value", "some-value")
 
-  const value = container.resolve("submodule.value")
+  const error = t.throws(
+    () => container.resolve("submodule.value"),
+    Error,
+    "should not be able to resolve a value in a private submodule"
+  )
 
-  t.is(value, "some-value")
+  t.regex(error.message, /not visible/, "should state the problem")
 })

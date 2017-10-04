@@ -7,6 +7,10 @@ const {
   splitModulePath,
   createRegistrationApi: createModuleRegistrationApi,
 } = require("./modules")
+const {
+  visibilities,
+  addVisibility,
+} = require("./visibility")
 const getDebugInfo = require("./debug-info")
 
 module.exports = () => {
@@ -71,7 +75,9 @@ function _createContainer({
 
   function createRegistrationApi(moduleRegistration) {
     const registrationApi = {
-      registerFactory(id, factory, lifetime) {
+
+      // TODO make lifetime/visibility an options object
+      registerFactory(id, factory, lifetime = lifetimes.TRANSIENT, visibility = visibilities.PRIVATE) {
         if (typeof factory !== "function") {
           throw new Error(`Can't register '${id}' as a factory - it is not a function`)
         }
@@ -79,35 +85,39 @@ function _createContainer({
         if (lifetime && !lifetime in lifetimes) {
           throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
         }
-        if (arguments.length >= 3 && !lifetime) {
-          throw new Error(`Cannot register '${id}' - lifetime is set but not defined`)
-        }
-        if (!lifetime) {
-          lifetime = lifetimes.TRANSIENT
-        }
 
-        moduleRegistration.registerFactory(id, {
+        lifetimes[lifetime] // ensures we're using a valid lifetime
+        visibilities[visibility] // ensures we're using a valid visibility
+
+        const component = addVisibility(visibility, {
           factory,
           lifetime,
         })
+        moduleRegistration.registerFactory(id, component)
 
         return registrationApi
       },
 
-      registerValue(id, value) {
+      registerValue(id, value, visibility = visibilities.PRIVATE) {
         if (value === undefined && arguments.length < 2) {
           throw new Error(`Can't register '${id}' - value not defined`)
         }
 
-        moduleRegistration.registerInstance(id, {
+        visibilities[visibility] // ensures we're using a valid visibility
+
+        const component = addVisibility(visibility, {
           instance: value,
         })
+        moduleRegistration.registerInstance(id, component)
 
         return registrationApi
       },
 
-      registerSubmodule(id) {
-        moduleRegistration.registerModule(id, createModule())
+      registerSubmodule(id, visibility = visibilities.PRIVATE) {
+        visibilities[visibility] // ensures we're using a valid visibility
+
+        const component = addVisibility(visibility, createModule())
+        moduleRegistration.registerModule(id, component)
 
         return createRegistrationApi(moduleRegistration.forSubModule(id))
       },

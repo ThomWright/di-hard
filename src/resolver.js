@@ -6,9 +6,11 @@ const {
   getFactory,
   getModule,
   getModulePath,
+  exists,
   cacheInstance,
 } = require("./modules")
 const lifetimes = require("./lifetimes")
+const {forRootModule} = require("./visibility")
 
 module.exports = function createResolver({
   containerName,
@@ -19,15 +21,39 @@ module.exports = function createResolver({
   previousDependencyPath = [],
   previouslySearchedContainers = [],
 }) {
+  const intoModulePath = getModulePath(forComponent)
+  const isVisibleFrom = forRootModule(rootModule)
+  const isVisible = isVisibleFrom(intoModulePath)
 
   return new Proxy({}, {
-    get(_, id) {
+    get(_, id) { // eslint-disable-line complexity
       const componentModulePath = joinModulePath(getModulePath(fromModule), id)
       const formattedModulePath = formatModulePath(componentModulePath)
       // console.log(`Resolving: '${formattedModulePath}' into '${formatModulePath(forComponent.modulePath)}'`)
 
-      // check for circular dependencies
       const dependencyPath = [...previousDependencyPath, {componentModulePath, containerName}]
+
+      if (!exists(fromModule, id)) {
+        // if we can't resolve anything in this container, see if a parentContainer can
+        const searchedContainers = [...previouslySearchedContainers, containerName]
+        if (!parentContainer) {
+          throw new Error(
+            `Nothing registered for '${formattedModulePath}' in containers: '${searchedContainers.join(" -> ")}'.` +
+            ` Trying to resolve: '${formatDepPath(dependencyPath)}'.`
+          )
+        }
+        return parentContainer.resolve(
+          id,
+          previousDependencyPath,
+          searchedContainers
+        )
+      }
+
+      if (!isVisible(componentModulePath)) {
+        throw new Error(`'${formattedModulePath}' is not visible to '${intoModulePath}'`)
+      }
+
+      // check for circular dependencies
       if (previousDependencyPath.find(sameIdAndContainer({componentModulePath, containerName}))) {
         throw new Error(`Circular dependencies: '${formatDepPath(dependencyPath)}'`)
       }
@@ -78,19 +104,7 @@ module.exports = function createResolver({
         }
       }
 
-      // if we can't resolve anything in this container, see if a parentContainer can
-      const searchedContainers = [...previouslySearchedContainers, containerName]
-      if (!parentContainer) {
-        throw new Error(
-          `Nothing registered for '${formattedModulePath}' in containers: '${searchedContainers.join(" -> ")}'.` +
-          ` Trying to resolve: '${formatDepPath(dependencyPath)}'.`
-        )
-      }
-      return parentContainer.resolve(
-        id,
-        previousDependencyPath,
-        searchedContainers
-      )
+      throw new Error("oh no") // FIXME
     },
     set(target, name, value) {
       throw new Error(`Can't set values on the resolver. Attempted to set '${name}' to '${value}'.`)

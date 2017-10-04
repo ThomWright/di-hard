@@ -1,6 +1,7 @@
 const test = require("ava")
 const createContainerModule = require("../container")
-const {TRANSIENT, REGISTRATION} = require("../lifetimes")
+const lifetimes = require("../lifetimes")
+const {TRANSIENT, REGISTRATION} = lifetimes
 
 const NOOP_STREAM = {write: () => {}}
 const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
@@ -31,10 +32,10 @@ test("undefined", t => {
   let instances = 0
   const container = createContainer("root")
   const error = t.throws(
-    () => container.registerFactory("ididid", () => ++instances, undefined),
+    () => container.registerFactory("ididid", () => ++instances, lifetimes.NAHMATE),
     Error
   )
-  t.regex(error.message, /ididid/)
+  t.regex(error.message, /NAHMATE/)
 })
 
 test("TRANSIENT", t => {

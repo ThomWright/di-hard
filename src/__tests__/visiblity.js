@@ -9,6 +9,19 @@ const {
   makePrivate,
 } = require("../visibility")
 
+test("public component in top level", t => {
+  const componentDef = makePublic({})
+  const rootModule = createModule()
+
+  const reg = createRegistrationApi(rootModule)
+  reg.registerFactory("id", componentDef)
+
+  const isVisibleFrom = forRootModule(rootModule)
+  const isVisible = isVisibleFrom([])
+  const visible = isVisible(["id"])
+  t.is(visible, true, "top level components should be visible externally")
+})
+
 test("public component in same module", t => {
   const componentDef = makePublic({})
   const dependencyDef = makePublic({})
@@ -173,5 +186,24 @@ test("public component with private common ancestor", t => {
   const isVisibleFrom = forRootModule(rootModule)
   const isVisible = isVisibleFrom(["modA", "modB", "id"])
   const visible = isVisible(["modA", "dep"])
-  t.is(visible, false, "private components should not be visible to components with common ancestors")
+  t.is(visible, false, "private components should not be visible, even to components with common ancestors")
+})
+
+test("ancester", t => {
+  const componentDef = makePublic({})
+  const rootModule = createModule()
+
+  const reg = createRegistrationApi(rootModule)
+  reg.registerModule("modA", makePrivate(createModule()))
+
+  const modAReg = reg.forSubModule("modA")
+  modAReg.registerModule("modB", makePrivate(createModule()))
+
+  const modBReg = modAReg.forSubModule("modB")
+  modBReg.registerFactory("id", componentDef)
+
+  const isVisibleFrom = forRootModule(rootModule)
+  const isVisible = isVisibleFrom(["modA", "modB", "id"])
+  const visible = isVisible(["modA"])
+  t.is(visible, true, "private ancestors should be visible")
 })

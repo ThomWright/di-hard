@@ -1,6 +1,8 @@
 const test = require("ava")
 
 const createContainerModule = require("../container")
+const {visibilities} = require("../visibility")
+const lifetimes = require("../lifetimes")
 
 const NOOP_STREAM = {write: () => {}}
 const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
@@ -44,8 +46,7 @@ test("unknown dependency key", t => {
   t.regex(error.message, /dependencyName/, "should specify unknown key")
 })
 
-
-test("between submodules", t => {
+test("public component in same module", t => {
   const componentDefinition = ({
     submodule: {
       dependency,
@@ -62,11 +63,37 @@ test("between submodules", t => {
 
   const container = createContainer("root")
   container
-    .registerSubmodule("submodule")
-      .registerFactory("testComponent", componentDefinition)
+    .registerSubmodule("submodule", visibilities.PUBLIC)
+      .registerFactory("testComponent", componentDefinition, lifetimes.TRANSIENT, visibilities.PUBLIC)
+      .registerFactory("dependency", dependencyDefinition, lifetimes.TRANSIENT, visibilities.PUBLIC)
+
+  const instance = container.resolve("submodule.testComponent")
+  const dep = instance.getInjectedDependency()
+  t.is(dep, "dependencyInstance", "should inject a dependency from the same submodule")
+})
+
+test("private component in same submodule", t => {
+  const componentDefinition = ({
+    submodule: {
+      dependency,
+    },
+  }) => {
+    return {
+      getInjectedDependency() {
+        return dependency
+      },
+    }
+  }
+
+  const dependencyDefinition = () => "dependencyInstance"
+
+  const container = createContainer("root")
+  container
+    .registerSubmodule("submodule", visibilities.PUBLIC)
+      .registerFactory("testComponent", componentDefinition, lifetimes.TRANSIENT, visibilities.PUBLIC)
       .registerFactory("dependency", dependencyDefinition)
 
   const instance = container.resolve("submodule.testComponent")
   const dep = instance.getInjectedDependency()
-  t.is(dep, "dependencyInstance", "should inject an instance of the requested dependency from the specified submodule")
+  t.is(dep, "dependencyInstance", "should inject a dependency from the same submodule")
 })
