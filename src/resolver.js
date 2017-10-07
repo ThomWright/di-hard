@@ -26,7 +26,7 @@ module.exports = function createResolver({
   const isVisible = isVisibleFrom(intoModulePath)
 
   return new Proxy({}, {
-    get(_, id) { // eslint-disable-line complexity
+    get(_, id) { // eslint-disable-line complexity, max-statements
       const componentModulePath = joinModulePath(getModulePath(fromModule), id)
       const formattedModulePath = formatModulePath(componentModulePath)
       // console.log(`Resolving: '${formattedModulePath}' into '${formatModulePath(forComponent.modulePath)}'`)

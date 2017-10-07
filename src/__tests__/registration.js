@@ -205,7 +205,7 @@ test("submodule - value within a submodule", t => {
 
   container
     .registerSubmodule("submodule")
-      .registerValue("valueId", "some value")
+    .registerValue("valueId", "some value")
 
   const error = t.throws(
     () => container.resolve("valueId"),

@@ -82,10 +82,6 @@ function _createContainer({
           throw new Error(`Can't register '${id}' as a factory - it is not a function`)
         }
 
-        if (lifetime && !lifetime in lifetimes) {
-          throw new Error(`Cannot register '${id}' - unknown lifetime '${lifetime}'`)
-        }
-
         lifetimes[lifetime] // ensures we're using a valid lifetime
         visibilities[visibility] // ensures we're using a valid visibility
 
