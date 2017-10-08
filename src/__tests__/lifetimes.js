@@ -32,7 +32,7 @@ test("non-existant lifetime access", t => {
   let instances = 0
   const container = createContainer("root")
   const error = t.throws(
-    () => container.registerFactory("ididid", () => ++instances, lifetimes.NAHMATE), // eslint-disable-line no-plusplus
+    () => container.registerFactory("ididid", () => ++instances, {lifetime: lifetimes.NAHMATE}), // eslint-disable-line no-plusplus
     Error
   )
   t.regex(error.message, /NAHMATE/, "should specify the incorrect lifetime name")
@@ -42,7 +42,7 @@ test("random string", t => {
   let instances = 0
   const container = createContainer("root")
   const error = t.throws(
-    () => container.registerFactory("ididid", () => ++instances, "notalifetime"), // eslint-disable-line no-plusplus
+    () => container.registerFactory("ididid", () => ++instances, {lifetime: "notalifetime"}), // eslint-disable-line no-plusplus
     Error
   )
   t.regex(error.message, /notalifetime/, "should specify the incorrect lifetime name")
@@ -52,7 +52,7 @@ test("random string", t => {
 test("TRANSIENT", t => {
   let instances = 0
   const container = createContainer("root")
-  container.registerFactory("id", () => ++instances, TRANSIENT) // eslint-disable-line no-plusplus
+  container.registerFactory("id", () => ++instances, {lifetime: TRANSIENT}) // eslint-disable-line no-plusplus
 
   const i = container.resolve("id")
   const j = container.resolve("id")
@@ -64,7 +64,7 @@ test("TRANSIENT", t => {
 test("REGISTRATION", t => {
   let instances = 0
   const container = createContainer("root")
-  container.registerFactory("id", () => ++instances, REGISTRATION) // eslint-disable-line no-plusplus
+  container.registerFactory("id", () => ++instances, {lifetime: REGISTRATION}) // eslint-disable-line no-plusplus
 
   const i = container.resolve("id")
   const j = container.resolve("id")
@@ -76,7 +76,7 @@ test("REGISTRATION", t => {
 test("REGISTRATION with child containers", t => {
   let instances = 0
   const container = createContainer("root")
-  container.registerFactory("id", () => ++instances, REGISTRATION) // eslint-disable-line no-plusplus
+  container.registerFactory("id", () => ++instances, {lifetime: REGISTRATION}) // eslint-disable-line no-plusplus
 
   const i = container.child("name1").resolve("id")
   const j = container.child("name2").resolve("id")

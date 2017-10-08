@@ -77,7 +77,7 @@ function _createContainer({
     const registrationApi = {
 
       // TODO make lifetime/visibility an options object
-      registerFactory(id, factory, lifetime = lifetimes.TRANSIENT, visibility = visibilities.PRIVATE) {
+      registerFactory(id, factory, {lifetime = lifetimes.TRANSIENT, visibility = visibilities.PRIVATE} = {}) {
         if (typeof factory !== "function") {
           throw new Error(`Can't register '${id}' as a factory - it is not a function`)
         }
@@ -98,7 +98,7 @@ function _createContainer({
         return registrationApi
       },
 
-      registerValue(id, value, visibility = visibilities.PRIVATE) {
+      registerValue(id, value, {visibility = visibilities.PRIVATE} = {}) {
         if (value === undefined && arguments.length < 2) {
           throw new Error(`Can't register '${id}' - value not defined`)
         }
@@ -117,7 +117,7 @@ function _createContainer({
         return registrationApi
       },
 
-      registerSubmodule(id, visibility = visibilities.PRIVATE) {
+      registerSubmodule(id, {visibility = visibilities.PRIVATE} = {}) {
         try {
           visibilities[visibility] // ensures we're using a valid visibility
         } catch (e) {

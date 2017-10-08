@@ -40,8 +40,8 @@ test("public value from inside a public submodule", t => {
   const container = createContainer("container-with-submodule")
 
   container
-    .registerSubmodule("submodule", visibilities.PUBLIC)
-    .registerValue("value", "some-value", visibilities.PUBLIC)
+    .registerSubmodule("submodule", {visibility: visibilities.PUBLIC})
+    .registerValue("value", "some-value", {visibility: visibilities.PUBLIC})
 
   const value = container.resolve("submodule.value")
 

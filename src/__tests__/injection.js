@@ -64,8 +64,14 @@ test("public component in same module", t => {
   const container = createContainer("root")
   container
     .registerSubmodule("submodule", visibilities.PUBLIC)
-    .registerFactory("testComponent", componentDefinition, lifetimes.TRANSIENT, visibilities.PUBLIC)
-    .registerFactory("dependency", dependencyDefinition, lifetimes.TRANSIENT, visibilities.PUBLIC)
+    .registerFactory("testComponent", componentDefinition, {
+      lifetime: lifetimes.TRANSIENT,
+      visibility: visibilities.PUBLIC,
+    })
+    .registerFactory("dependency", dependencyDefinition, {
+      lifetime: lifetimes.TRANSIENT,
+      visibility: visibilities.PUBLIC,
+    })
 
   const instance = container.resolve("submodule.testComponent")
   const dep = instance.getInjectedDependency()
@@ -90,7 +96,10 @@ test("private component in same submodule", t => {
   const container = createContainer("root")
   container
     .registerSubmodule("submodule", visibilities.PUBLIC)
-    .registerFactory("testComponent", componentDefinition, lifetimes.TRANSIENT, visibilities.PUBLIC)
+    .registerFactory("testComponent", componentDefinition, {
+      lifetime: lifetimes.TRANSIENT,
+      visibility: visibilities.PUBLIC,
+    })
     .registerFactory("dependency", dependencyDefinition)
 
   const instance = container.resolve("submodule.testComponent")

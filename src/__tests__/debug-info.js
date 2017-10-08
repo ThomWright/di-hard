@@ -9,7 +9,7 @@ const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
 
 test("listing registrations and their dependencies", t => {
   const parent = createContainer("parent")
-  parent.registerFactory("A", ({B}) => B, REGISTRATION)
+  parent.registerFactory("A", ({B}) => B, {lifetime: REGISTRATION})
   parent.registerFactory("B", ({}) => {})
 
   const child = parent.child("child")
