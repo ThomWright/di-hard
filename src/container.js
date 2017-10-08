@@ -82,8 +82,12 @@ function _createContainer({
           throw new Error(`Can't register '${id}' as a factory - it is not a function`)
         }
 
-        lifetimes[lifetime] // ensures we're using a valid lifetime
-        visibilities[visibility] // ensures we're using a valid visibility
+        try {
+          lifetimes[lifetime] // ensures we're using a valid lifetime
+          visibilities[visibility] // ensures we're using a valid visibility
+        } catch (e) {
+          throw new Error(`Can't register '${id}' as a factory - ${e.message}`)
+        }
 
         const component = addVisibility(visibility, {
           factory,
@@ -99,7 +103,11 @@ function _createContainer({
           throw new Error(`Can't register '${id}' - value not defined`)
         }
 
-        visibilities[visibility] // ensures we're using a valid visibility
+        try {
+          visibilities[visibility] // ensures we're using a valid visibility
+        } catch (e) {
+          throw new Error(`Can't register '${id}' as a value - ${e.message}`)
+        }
 
         const component = addVisibility(visibility, {
           instance: value,
@@ -110,7 +118,11 @@ function _createContainer({
       },
 
       registerSubmodule(id, visibility = visibilities.PRIVATE) {
-        visibilities[visibility] // ensures we're using a valid visibility
+        try {
+          visibilities[visibility] // ensures we're using a valid visibility
+        } catch (e) {
+          throw new Error(`Can't register '${id}' as a submodule - ${e.message}`)
+        }
 
         const component = addVisibility(visibility, createModule())
         moduleRegistration.registerModule(id, component)

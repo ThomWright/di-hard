@@ -28,14 +28,25 @@ test("default", t => {
   t.is(j, 2, "should have TRANSIENT lifetime")
 })
 
-test("undefined", t => {
+test("non-existant lifetime access", t => {
   let instances = 0
   const container = createContainer("root")
   const error = t.throws(
     () => container.registerFactory("ididid", () => ++instances, lifetimes.NAHMATE), // eslint-disable-line no-plusplus
     Error
   )
-  t.regex(error.message, /NAHMATE/)
+  t.regex(error.message, /NAHMATE/, "should specify the incorrect lifetime name")
+})
+
+test("random string", t => {
+  let instances = 0
+  const container = createContainer("root")
+  const error = t.throws(
+    () => container.registerFactory("ididid", () => ++instances, "notalifetime"), // eslint-disable-line no-plusplus
+    Error
+  )
+  t.regex(error.message, /notalifetime/, "should specify the incorrect lifetime name")
+  t.regex(error.message, /ididid/, "should specify the registration ID")
 })
 
 test("TRANSIENT", t => {
