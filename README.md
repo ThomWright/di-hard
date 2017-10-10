@@ -1,12 +1,18 @@
-# DI
+# DI-hard
 
-[![npm](https://img.shields.io/npm/v/@mft/di.svg?maxAge=1000)](https://www.npmjs.com/package/@mft/di)
-[![dependency Status](https://img.shields.io/david/momentumft/di.svg?maxAge=1000)](https://david-dm.org/momentumft/di)
-[![devDependency Status](https://img.shields.io/david/dev/momentumft/di.svg?maxAge=1000)](https://david-dm.org/momentumft/di)
-[![license](https://img.shields.io/github/license/momentumft/di.svg)](https://github.com/momentumft/di)
-[![node](https://img.shields.io/node/v/@mft/di.svg?maxAge=1000)](https://www.npmjs.com/package/@mft/di)
+[![npm](https://img.shields.io/npm/v/di-hard.svg?maxAge=1000)](https://www.npmjs.com/package/di-hard)
+[![dependency Status](https://img.shields.io/david/ThomWright/di-hard.svg?maxAge=1000)](https://david-dm.org/ThomWright/di-hard)
+[![devDependency Status](https://img.shields.io/david/dev/ThomWright/di-hard.svg?maxAge=1000)](https://david-dm.org/ThomWright/di-hard)
+[![license](https://img.shields.io/github/license/ThomWright/di-hard.svg)](https://github.com/ThomWright/di-hard)
 
 Simple, predictable dependency injection
+
+Features:
+
+- clear separation between wiring and application
+- minimal lock-in
+- control over component lifetimes
+- module hierarchy with private and public components
 
 ## Example
 
@@ -26,7 +32,7 @@ function myServiceFactory({myDependency}) {
   }
 }
 
-const container = require("@mft/di").createContainer("application")
+const container = require("di-hard").createContainer("application")
 container.registerFactory("myService", myServiceFactory)
 container.registerFactory("myDependency", myDependencyFactory)
 
@@ -53,7 +59,7 @@ The purpose of this library is to enable easy creation of your application's com
 
 Components are the individual pieces of your application. They can be functions, objects, classes, strings... whatever you want.
 
-An example of a component with two dependencies. Here, we have a factory function, which takes an object with named dependencies, and returns an instance of the component (in this case, an object).
+Below is an example of a component with two dependencies. Here, we have a factory function, which takes an object with named dependencies, and returns an instance of the component (in this case, an object).
 
 Notice that there is no direct dependency on the DI library here. The only requirement is that factory functions take their dependencies as named arguments (an object). This makes the code portable, easy to test, and possible to wire together manually.
 
@@ -78,7 +84,7 @@ What we can do instead is register all our component factories with a 'container
 Here is how we would register the component factories for the above example, and manually resolve (create) an instance of the component, with its dependencies injected.
 
 ```js
-const di = require("@mft/di")
+const di = require("di-hard")
 
 const container = di.createContainer("application")
 
@@ -138,7 +144,7 @@ Sometimes you don't want a component to live for the entire life of your applica
 For this, we can use child containers. Create one like so:
 
 ```js
-const di = require("@mft/di")
+const di = require("di-hard")
 const express = require('express')
 const app = express()
 
@@ -162,22 +168,74 @@ With that in mind, there are two simple rules which dictate how instances get re
 
 This means nothing can depend on something with a shorter lifetime. For example, no components in the `application` container could depend on a component in the `request` container. However, components in the `request` container can depend on instances from the `application` container.
 
+### Modules
+
+It's possible namespace groups of components by creating a hierarchy of modules.
+
+```js
+const factory = ({
+  // use nested object deconstruction to inject components from modules
+  my_module: {
+    dependency,
+  },
+}) => {
+  // ...
+}
+
+const dependencyDefinition = () => "dependencyInstance"
+
+const container = createContainer("root")
+container
+  .registerSubmodule("my_module", visibilities.PUBLIC)
+    .registerFactory("component", factory, {
+      visibility: visibilities.PUBLIC,
+    })
+    .registerFactory("dependency", dependencyDefinition)
+
+// use shorthand dot-notation to externally resolve components inside modules
+const instance = container.resolve("my_module.component")
+```
+
+### Visibility
+
+You can control which components are visible to other components by using visiblity modifiers. Anything registered with the container (a component or a module) can be either `PUBLIC` or `PRIVATE`. `PRIVATE` components are only visible to other components in the same module.
+
+Visibility defaults to `PRIVATE`.
+
+In the example below, it would be possible to inject `my_module.public_api` into `my_component`, and `my_module.internal` into `my_module.public_api`, but trying to inject `my_module.internal` into `my_component` would throw an error.
+
+```js
+const container = createContainer("root")
+container
+  .registerFactory("my_component", myComponentFactory)
+  .registerSubmodule("my_module", visibilities.PUBLIC)
+    .registerFactory("public_api", publicComponent, {
+      visibility: visibilities.PUBLIC,
+    })
+    .registerFactory("internal", privateComponent, {
+      visibility: visibilities.PRIVATE,
+    })
+``
+
 ## API
 
-`const di = require("@mft/di")`
+`const di = require("di-hard")`
 
 ### DI
 
 - `di.createContainer(containerName: string) -> container`
 - `di.lifetimes.TRANSIENT`
 - `di.lifetimes.REGISTRATION`
+- `di.visibilities.PUBLIC`
+- `di.visibilities.PRIVATE`
 
 ### Container
 
 Services and values can be registered with a container. It is responsible for resolving an ID to an instance.
 
-- `container.registerFactory(id: string, factory: function [, lifetime]) -> registrationApi`
-- `container.registerValue(id: string, value: any) -> registrationApi`
+- `container.registerFactory(id: string, factory: function, options: {lifetime, visibility}) -> registrationApi`
+- `container.registerValue(id: string, value: any, options: {visibility}) -> registrationApi`
+- `container.registerSubmodule(id: string, options: {visibility}) -> registrationApi`
 - `container.resolve(id: string) -> componentInstance`
 - `container.child(containerName: string) -> container`
 
@@ -187,6 +245,8 @@ The `registerX` functions are chainable, for example:
 container
   .registerFactory(...)
   .registerValue(...)
+  .registerSubmodule(...)
+    .registerValue(...)
 ```
 
 ### Factory functions
