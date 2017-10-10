@@ -1,6 +1,6 @@
 {
-  "name": "@mft/di",
-  "version": "1.0.3",
+  "name": "di-hard",
+  "version": "1.0.0",
   "description": "Dependency injection",
   "main": "src/index.js",
   "author": "Thom Wright",
@@ -13,13 +13,13 @@
     "ioc"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/momentumft/di",
+  "homepage": "https://github.com/ThomWright/di-hard",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com:momentumft/di.git"
+    "url": "git+ssh://git@github.com:ThomWright/di-hard.git"
   },
   "bugs": {
-    "url": "https://github.com/momentumft/di/issues"
+    "url": "https://github.com/ThomWright/di-hard/issues"
   },
   "engines": {
     "node": ">=6.0.0"
