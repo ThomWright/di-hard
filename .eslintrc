@@ -1,8 +1,0 @@
----
-  extends: "@mft/eslint-config-momentumft"
-  env:
-    browser: false
-  rules:
-    no-plusplus:
-      - warn
-      - allowForLoopAfterthoughts: true

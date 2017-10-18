@@ -1,14 +1,13 @@
-const test = require("ava")
+import test from "ava"
 
-const createContainerModule = require("../container")
-const {visibilities} = require("../visibility")
-const lifetimes = require("../lifetimes")
+import createContainerModule from "../container"
+import Visibility from "../visibility"
+import Lifetime from "../lifetimes"
 
-const NOOP_STREAM = {write: () => {}}
-const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer} = createContainerModule()
 
 test("single dependency", t => {
-  const componentDefinition = ({dependency}) => {
+  const componentDefinition = ({dependency}: {dependency: string}) => {
     return {
       getInjectedDependency() {
         return dependency
@@ -24,11 +23,15 @@ test("single dependency", t => {
 
   const instance = container.resolve("testComponent")
   const dep = instance.getInjectedDependency()
-  t.is(dep, "dependencyInstance", "should inject an instance of the requested dependency")
+  t.is(
+    dep,
+    "dependencyInstance",
+    "should inject an instance of the requested dependency",
+  )
 })
 
 test("unknown dependency key", t => {
-  const componentDefinition = ({dependencyName}) => {
+  const componentDefinition = ({dependencyName}: {dependencyName: string}) => {
     return {
       getInjectedDependency() {
         return dependencyName
@@ -39,18 +42,15 @@ test("unknown dependency key", t => {
   const container = createContainer("root")
   container.registerFactory("testComponent", componentDefinition)
 
-  const error = t.throws(
-    () => container.resolve("testComponent"),
-    Error
-  )
+  const error = t.throws(() => container.resolve("testComponent"), Error)
   t.regex(error.message, /dependencyName/, "should specify unknown key")
 })
 
 test("public component in same module", t => {
   const componentDefinition = ({
-    submodule: {
-      dependency,
-    },
+    submodule: {dependency},
+  }: {
+    submodule: {dependency: string}
   }) => {
     return {
       getInjectedDependency() {
@@ -63,26 +63,30 @@ test("public component in same module", t => {
 
   const container = createContainer("root")
   container
-    .registerSubmodule("submodule", visibilities.PUBLIC)
+    .registerSubmodule("submodule", {visibility: Visibility.Public})
     .registerFactory("testComponent", componentDefinition, {
-      lifetime: lifetimes.TRANSIENT,
-      visibility: visibilities.PUBLIC,
+      lifetime: Lifetime.Transient,
+      visibility: Visibility.Public,
     })
     .registerFactory("dependency", dependencyDefinition, {
-      lifetime: lifetimes.TRANSIENT,
-      visibility: visibilities.PUBLIC,
+      lifetime: Lifetime.Transient,
+      visibility: Visibility.Public,
     })
 
   const instance = container.resolve("submodule.testComponent")
   const dep = instance.getInjectedDependency()
-  t.is(dep, "dependencyInstance", "should inject a dependency from the same submodule")
+  t.is(
+    dep,
+    "dependencyInstance",
+    "should inject a dependency from the same submodule",
+  )
 })
 
 test("private component in same submodule", t => {
   const componentDefinition = ({
-    submodule: {
-      dependency,
-    },
+    submodule: {dependency},
+  }: {
+    submodule: {dependency: string}
   }) => {
     return {
       getInjectedDependency() {
@@ -95,14 +99,18 @@ test("private component in same submodule", t => {
 
   const container = createContainer("root")
   container
-    .registerSubmodule("submodule", visibilities.PUBLIC)
+    .registerSubmodule("submodule", {visibility: Visibility.Public})
     .registerFactory("testComponent", componentDefinition, {
-      lifetime: lifetimes.TRANSIENT,
-      visibility: visibilities.PUBLIC,
+      lifetime: Lifetime.Transient,
+      visibility: Visibility.Public,
     })
     .registerFactory("dependency", dependencyDefinition)
 
   const instance = container.resolve("submodule.testComponent")
   const dep = instance.getInjectedDependency()
-  t.is(dep, "dependencyInstance", "should inject a dependency from the same submodule")
+  t.is(
+    dep,
+    "dependencyInstance",
+    "should inject a dependency from the same submodule",
+  )
 })

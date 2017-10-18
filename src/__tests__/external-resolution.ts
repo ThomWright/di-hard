@@ -1,10 +1,9 @@
-const test = require("ava")
+import test from "ava"
 
-const createContainerModule = require("../container")
-const {visibilities} = require("../visibility")
+import createContainerModule from "../container"
+import Visiblity from "../visibility"
 
-const NOOP_STREAM = {write: () => {}}
-const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer} = createContainerModule()
 
 test("component instance", t => {
   const componentDefinition = () => "testComponentInstance"
@@ -13,7 +12,11 @@ test("component instance", t => {
   container.registerFactory("testComponent", componentDefinition)
 
   const instance = container.resolve("testComponent")
-  t.is(instance, "testComponentInstance", "should return the instance created by the factory")
+  t.is(
+    instance,
+    "testComponentInstance",
+    "should return the instance created by the factory",
+  )
 })
 
 test("non-existant component instance", t => {
@@ -22,7 +25,7 @@ test("non-existant component instance", t => {
   const error = t.throws(
     () => container.resolve("nopenopenope"),
     Error,
-    "should not be able to resolve something that has not been registered"
+    "should not be able to resolve something that has not been registered",
   )
 
   t.regex(error.message, /Nothing registered/, "should state the problem")
@@ -40,8 +43,8 @@ test("public value from inside a public submodule", t => {
   const container = createContainer("container-with-submodule")
 
   container
-    .registerSubmodule("submodule", {visibility: visibilities.PUBLIC})
-    .registerValue("value", "some-value", {visibility: visibilities.PUBLIC})
+    .registerSubmodule("submodule", {visibility: Visiblity.Public})
+    .registerValue("value", "some-value", {visibility: Visiblity.Public})
 
   const value = container.resolve("submodule.value")
 
@@ -51,14 +54,12 @@ test("public value from inside a public submodule", t => {
 test("public value from inside a private submodule", t => {
   const container = createContainer("container-with-submodule")
 
-  container
-    .registerSubmodule("submodule")
-    .registerValue("value", "some-value")
+  container.registerSubmodule("submodule").registerValue("value", "some-value")
 
   const error = t.throws(
     () => container.resolve("submodule.value"),
     Error,
-    "should not be able to resolve a value in a private submodule"
+    "should not be able to resolve a value in a private submodule",
   )
 
   t.regex(error.message, /not visible/, "should state the problem")

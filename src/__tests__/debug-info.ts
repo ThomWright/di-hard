@@ -1,15 +1,14 @@
-const test = require("ava")
+import test from "ava"
 
-const createContainerModule = require("../container")
-const lifetimes = require("../lifetimes")
-const {TRANSIENT, REGISTRATION} = lifetimes
+import createContainerModule from "../container"
+import Lifetime from "../lifetimes"
+const {Transient, Registration} = Lifetime
 
-const NOOP_STREAM = {write: () => {}}
-const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer} = createContainerModule()
 
 test("listing registrations and their dependencies", t => {
   const parent = createContainer("parent")
-  parent.registerFactory("A", ({B}) => B, {lifetime: REGISTRATION})
+  parent.registerFactory("A", ({B}) => B, {lifetime: Registration})
   parent.registerFactory("B", ({}) => {})
 
   const child = parent.child("child")
@@ -18,7 +17,8 @@ test("listing registrations and their dependencies", t => {
 
   child.registerValue("E", "e")
 
-  child.registerSubmodule("M")
+  child
+    .registerSubmodule("M")
     .registerValue("MV", "mv")
     .registerSubmodule("N")
 
@@ -30,11 +30,11 @@ test("listing registrations and their dependencies", t => {
       modulePath: "",
       factories: {
         C: {
-          lifetime: TRANSIENT,
+          lifetime: Transient,
           dependencies: ["A"],
         },
         D: {
-          lifetime: TRANSIENT,
+          lifetime: Transient,
           dependencies: ["E"],
         },
       },
@@ -61,11 +61,11 @@ test("listing registrations and their dependencies", t => {
         modulePath: "",
         factories: {
           A: {
-            lifetime: REGISTRATION,
+            lifetime: Registration,
             dependencies: ["B"],
           },
           B: {
-            lifetime: TRANSIENT,
+            lifetime: Transient,
             dependencies: [],
           },
         },

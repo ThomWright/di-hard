@@ -122,19 +122,19 @@ A lifetime is a statement about how long a container caches a reference to a com
 
 There are two lifetimes currently supported:
 
-- `TRANSIENT`
-    - no reference cached
-    - one instance per resolution
-- `REGISTRATION`
-    - reference cached in container in which the factory was registered
-    - one instance per registration container
+- `Transient`
+  - no reference cached
+  - one instance per resolution
+- `Registration`
+  - reference cached in container in which the factory was registered
+  - one instance per registration container
 
-`TRANSIENT` is the default lifetime.
+`Transient` is the default lifetime.
 
 To explicitly set a lifetime, use the `registerFactory` function like so:
 
 ```js
-container.registerFactory("id", factory, di.lifetimes.REGISTRATION)
+container.registerFactory("id", factory, {lifetime: di.Lifetime.Registration})
 ```
 
 ### Child containers
@@ -186,9 +186,9 @@ const dependencyDefinition = () => "dependencyInstance"
 
 const container = createContainer("root")
 container
-  .registerSubmodule("my_module", visibilities.PUBLIC)
+  .registerSubmodule("my_module", Visibility.Public)
     .registerFactory("component", factory, {
-      visibility: visibilities.PUBLIC,
+      visibility: Visibility.PUBLIC,
     })
     .registerFactory("dependency", dependencyDefinition)
 
@@ -198,9 +198,9 @@ const instance = container.resolve("my_module.component")
 
 ### Visibility
 
-You can control which components are visible to other components by using visiblity modifiers. Anything registered with the container (a component or a module) can be either `PUBLIC` or `PRIVATE`. `PRIVATE` components are only visible to other components in the same module.
+You can control which components are visible to other components by using visiblity modifiers. Anything registered with the container (a component or a module) can be either `Public` or `Private`. `Private` components are only visible to other components in the same module.
 
-Visibility defaults to `PRIVATE`.
+Visibility defaults to `Private`.
 
 In the example below, it would be possible to inject `my_module.public_api` into `my_component`, and `my_module.internal` into `my_module.public_api`, but trying to inject `my_module.internal` into `my_component` would throw an error.
 
@@ -208,14 +208,14 @@ In the example below, it would be possible to inject `my_module.public_api` into
 const container = createContainer("root")
 container
   .registerFactory("my_component", myComponentFactory)
-  .registerSubmodule("my_module", visibilities.PUBLIC)
+  .registerSubmodule("my_module", {visibility: Visibility.Public})
     .registerFactory("public_api", publicComponent, {
-      visibility: visibilities.PUBLIC,
+      visibility: Visibility.Public,
     })
     .registerFactory("internal", privateComponent, {
-      visibility: visibilities.PRIVATE,
+      visibility: Visibility.Private,
     })
-``
+```
 
 ## API
 
@@ -224,10 +224,10 @@ container
 ### DI
 
 - `di.createContainer(containerName: string) -> container`
-- `di.lifetimes.TRANSIENT`
-- `di.lifetimes.REGISTRATION`
-- `di.visibilities.PUBLIC`
-- `di.visibilities.PRIVATE`
+- `di.Lifetime.Transient`
+- `di.Lifetime.Registration`
+- `di.Visibility.Public`
+- `di.Visibility.Private`
 
 ### Container
 

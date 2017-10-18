@@ -1,9 +1,8 @@
-const test = require("ava")
+import test from "ava"
 
-const createContainerModule = require("../container")
+import createContainerModule from "../container"
 
-const NOOP_STREAM = {write: () => {}}
-const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer} = createContainerModule()
 
 test("factory - valid", t => {
   const componentDefinition = () => "testComponentInstance"
@@ -11,42 +10,8 @@ test("factory - valid", t => {
   const container = createContainer("root")
   t.notThrows(
     () => container.registerFactory("testComponent", componentDefinition),
-    "should accept a factory function registration"
+    "should accept a factory function registration",
   )
-})
-
-test("factory - single argument", t => {
-  const container = createContainer("root")
-
-  const error = t.throws(
-    () => container.registerFactory("myID"),
-    Error
-  )
-  t.regex(error.message, /myID/)
-})
-
-test("factory - invalid ID", t => {
-  const container = createContainer("root")
-
-  function myFactory() {}
-
-  const error = t.throws(
-    () => container.registerFactory({}, myFactory),
-    Error
-  )
-  t.regex(error.message, /string/i)
-})
-
-test("factory - invalid (not a function)", t => {
-  const container = createContainer("root")
-  const error = t.throws(
-    () => container.registerFactory("testComponent", "not a function"),
-    Error,
-    "should not accept factories that are not functions"
-  )
-
-  t.regex(error.message, /testComponent/)
-  t.regex(error.message, /not a function/)
 })
 
 test("factory - same name twice", t => {
@@ -58,7 +23,7 @@ test("factory - same name twice", t => {
   const error = t.throws(
     () => container.registerFactory("uniqueId", componentDefinition),
     Error,
-    "should error with warning about repeated registration"
+    "should error with warning about repeated registration",
   )
 
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
@@ -75,31 +40,10 @@ test("value - undefined", t => {
   const container = createContainer("root")
   t.notThrows(
     () => container.registerValue("myValue", undefined),
-    "should accept undefined as a value"
+    "should accept undefined as a value",
   )
   const val = container.resolve("myValue")
   t.is(val, undefined)
-})
-
-test("value - single argument", t => {
-  const container = createContainer("root")
-
-  const error = t.throws(
-    () => container.registerValue("myID"),
-    Error,
-    "should throw when value not supplied"
-  )
-  t.regex(error.message, /myID/)
-})
-
-test("value - invalid ID", t => {
-  const container = createContainer("root")
-
-  const error = t.throws(
-    () => container.registerValue({}, "value"),
-    Error
-  )
-  t.regex(error.message, /string/i)
 })
 
 test("value - with same name as factory", t => {
@@ -109,7 +53,7 @@ test("value - with same name as factory", t => {
   const error = t.throws(
     () => container.registerValue("uniqueId", "value"),
     Error,
-    "should not be able to reuse IDs"
+    "should not be able to reuse IDs",
   )
 
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
@@ -122,7 +66,7 @@ test("factory - with same name as value", t => {
   const error = t.throws(
     () => container.registerFactory("uniqueId", () => {}),
     Error,
-    "should not be able to reuse IDs"
+    "should not be able to reuse IDs",
   )
 
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
@@ -135,7 +79,7 @@ test("factory - with same name as submodule", t => {
   const error = t.throws(
     () => container.registerFactory("uniqueId", () => {}),
     Error,
-    "should not be able to reuse IDs"
+    "should not be able to reuse IDs",
   )
 
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
@@ -148,7 +92,7 @@ test("factory - with same name as value of 'undefined'", t => {
   const error = t.throws(
     () => container.registerFactory("uniqueId", () => {}),
     Error,
-    "should not be able to reuse IDs, even if value is falsy"
+    "should not be able to reuse IDs, even if value is falsy",
   )
 
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
@@ -156,12 +100,13 @@ test("factory - with same name as value of 'undefined'", t => {
 
 test("chaining", t => {
   t.notThrows(
-    () => createContainer("root")
-      .registerFactory("f", () => {})
-      .registerValue("a", "a")
-      .registerSubmodule("m")
-      .registerValue("b", "b"),
-    "should not throw when chaining registations"
+    () =>
+      createContainer("root")
+        .registerFactory("f", () => {})
+        .registerValue("a", "a")
+        .registerSubmodule("m")
+        .registerValue("b", "b"),
+    "should not throw when chaining registations",
   )
 })
 
@@ -170,7 +115,7 @@ test("submodule", t => {
 
   t.notThrows(
     () => container.registerSubmodule("submodule"),
-    "should accept a submodule registration"
+    "should accept a submodule registration",
   )
 })
 
@@ -181,7 +126,7 @@ test("submodule - with same name as factory", t => {
   const error = t.throws(
     () => container.registerFactory("uniqueId", () => {}),
     Error,
-    "should not be able to reuse IDs"
+    "should not be able to reuse IDs",
   )
 
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
@@ -194,7 +139,7 @@ test("submodule - with same name as value", t => {
   const error = t.throws(
     () => container.registerValue("uniqueId", () => {}),
     Error,
-    "should not be able to reuse IDs"
+    "should not be able to reuse IDs",
   )
 
   t.regex(error.message, /uniqueId/, "should specify the problem ID")
@@ -210,7 +155,7 @@ test("submodule - value within a submodule", t => {
   const error = t.throws(
     () => container.resolve("valueId"),
     Error,
-    "values registered in a submodule should not be resolvable at the top level"
+    "values registered in a submodule should not be resolvable at the top level",
   )
 
   t.regex(error.message, /Nothing registered/, "should state the problem")
@@ -223,7 +168,7 @@ test("character whitelist", t => {
   const error = t.throws(
     () => container.registerValue("x.y", "some value"),
     Error,
-    "should not be able to register IDs which include '.'"
+    "should not be able to register IDs which include '.'",
   )
   t.regex(error.message, /invalid characters/, "should state the problem")
 })
