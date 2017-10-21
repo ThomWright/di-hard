@@ -1,4 +1,5 @@
-import {Id, ModuleRegistration, formatModulePath} from "./modules"
+import {ContainerInternalApi} from "./container"
+import {Id, ModuleRegistration, Instance, formatModulePath} from "./modules"
 import Lifetime from "./lifetimes"
 
 export interface DebugInfo {
@@ -20,7 +21,7 @@ export interface FactoryDebugInfo {
 }
 
 // Do whatever you want with this, it shouldn't throw any Errors
-const superDooperErrorSuppressor: any = new Proxy(
+const superDooperErrorSuppressor: Instance = new Proxy(
   () => superDooperErrorSuppressor,
   {
     get: (target, property) => {
@@ -39,7 +40,7 @@ export default function getDebugInfo({
   rootModuleReg,
 }: {
   containerName: string
-  parentContainer: any
+  parentContainer: ContainerInternalApi | undefined
   rootModuleReg: ModuleRegistration
 }) {
   const info: DebugInfo = {

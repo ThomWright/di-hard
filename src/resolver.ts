@@ -3,6 +3,7 @@ import {
   ComponentRegistration,
   ModuleRegistration,
   ModulePath,
+  Instance,
   formatModulePath,
   joinModulePath,
   isPathEqual as sameModulePath,
@@ -13,7 +14,7 @@ import {ContainerInternalApi} from "./container"
 import Lifetime from "./lifetimes"
 import {forRootModule} from "./visibility"
 
-export type Resolver = Record<Id, any>
+export type Resolver = Record<Id, Instance>
 
 export interface LocationInfo {
   containerName: string
@@ -44,7 +45,7 @@ export default function createResolver({
   return new Proxy(
     {},
     {
-      get(_, id): any {
+      get(_, id): Instance {
         if (typeof id !== "string") {
           throw new Error("come on now")
         }

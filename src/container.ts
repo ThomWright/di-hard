@@ -12,7 +12,7 @@ import {
 } from "./modules"
 import Visibility from "./visibility"
 import Lifetime from "./lifetimes"
-import getDebugInfo from "./debug-info"
+import getDebugInfo, {DebugInfo} from "./debug-info"
 
 export interface FactoryOptions {
   visibility?: Visibility
@@ -41,7 +41,7 @@ export interface ContainerRegistrationApi {
 export interface ContainerExternalApi {
   resolve(id: Id): Instance
   child(name: string): Container
-  getDebugInfo(): any
+  getDebugInfo(): DebugInfo
 }
 
 export interface ContainerInternalApi {
@@ -50,7 +50,7 @@ export interface ContainerInternalApi {
     previousDependencyPath?: LocationInfo[],
     previouslySearchedContainers?: string[],
   ): Instance
-  getDebugInfo(): any
+  getDebugInfo(): DebugInfo
   visiblePathToContainer(targetContainer: string): string[] | undefined
 }
 
@@ -104,7 +104,7 @@ function _createContainer({
       })[componentId]
     },
 
-    getDebugInfo(): any {
+    getDebugInfo(): DebugInfo {
       return getDebugInfo({
         containerName,
         parentContainer: parentContainerInternal,
