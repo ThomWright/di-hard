@@ -1,25 +1,13 @@
-const test = require("ava")
+import test from "ava"
 
-const createContainerModule = require("../container")
+import createContainerModule from "../container"
 
-const NOOP_STREAM = {write: () => {}}
-const {createContainer} = createContainerModule({stdio: NOOP_STREAM})
+const {createContainer} = createContainerModule()
 
 test("creation", t => {
   const container = createContainer("root")
   const child = container.child("child")
   t.is(typeof child, "object", "should create a child container")
-})
-
-test("creating without a name", t => {
-  const container = createContainer("root")
-
-  const error = t.throws(
-    () => container.child(),
-    Error,
-    "should throw when creating a container without a name"
-  )
-  t.regex(error.message, /name/)
 })
 
 test("container visibility (child -> parent)", t => {
@@ -87,7 +75,7 @@ test("unknown id", t => {
 })
 
 test("unknown dependency id", t => {
-  const factory = ({dependencyName}) => {
+  const factory = ({dependencyName}: {dependencyName: string}) => {
     return {
       getInjectedDependency() {
         return dependencyName
