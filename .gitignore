@@ -3,3 +3,4 @@ node_modules
 test-reports
 dist
 test
+package-lock.json
