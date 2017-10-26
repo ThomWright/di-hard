@@ -165,10 +165,31 @@ test("submodule - value within a submodule", t => {
 test("character whitelist", t => {
   const container = createContainer("container-with-submodule")
 
-  const error = t.throws(
-    () => container.registerValue("x.y", "some value"),
-    Error,
-    "should not be able to register IDs which include '.'",
-  )
-  t.regex(error.message, /invalid characters/, "should state the problem")
+  ;[
+    "a",
+    "zz",
+    "a0",
+    "a0_b",
+    "a_1_c",
+    "a-b",
+  ].forEach((id) => {
+    container.registerValue(id, "some value")
+  })
+
+  ;[
+    "_",
+    "A_",
+    "a__b",
+    "_a",
+    "a-",
+    "-a",
+    "a.b",
+  ].forEach((id) => {
+    const error = t.throws(
+      () => container.registerValue(id, "some value"),
+      Error,
+      `should not be able to register ID: ${id}`,
+    )
+    t.regex(error.message, /invalid ID/, "should state the problem")
+  })
 })

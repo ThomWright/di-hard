@@ -220,9 +220,9 @@ function checkAvailability(mod: Module, id: Id): void {
   if (typeof id !== "string") {
     throw new Error(`Cannot register '${id}' - ID must be a string`)
   }
-  if (!/^\w*$/.test(id)) {
+  if (!/^[a-z](?:[_-]?[a-z0-9]+)*$/i.test(id)) {
     throw new Error(
-      `Cannot register '${id}' - invalid characters. Allowed characters: 'a-z', 'A-Z', '0-9' and '_'`,
+      `Cannot register '${id}' - invalid ID. Allowed characters: 'a-z', 'A-Z', '0-9', '-' and '_'. Must begin with a letter, and end with a letter or number`,
     )
   }
 }
