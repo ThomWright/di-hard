@@ -1,11 +1,10 @@
 import Visibility from "./visibility"
 import Lifetime from "./lifetimes"
-import {Resolver} from "./resolver"
 
 export type Id = string
 export type ModulePath = Id[]
 
-export type Factory = (resolver: Resolver) => Instance
+export type Factory = (resolver: any) => Instance
 export type Instance = any
 
 export interface ComponentRegistration {

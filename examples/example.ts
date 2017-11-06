@@ -8,7 +8,7 @@ function myDependencyFactory() {
   return {
     getInfo() {
       return "(dependency)"
-    }
+    },
   }
 }
 function myServiceFactory({myDependency}: {myDependency: InfoGiver}) {

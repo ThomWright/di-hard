@@ -164,27 +164,10 @@ test("submodule - value within a submodule", t => {
 
 test("character whitelist", t => {
   const container = createContainer("container-with-submodule")
-
-  ;[
-    "a",
-    "zz",
-    "a0",
-    "a0_b",
-    "a_1_c",
-    "a-b",
-  ].forEach((id) => {
+  ;["a", "zz", "a0", "a0_b", "a_1_c", "a-b"].forEach(id => {
     container.registerValue(id, "some value")
   })
-
-  ;[
-    "_",
-    "A_",
-    "a__b",
-    "_a",
-    "a-",
-    "-a",
-    "a.b",
-  ].forEach((id) => {
+  ;["_", "A_", "a__b", "_a", "a-", "-a", "a.b"].forEach(id => {
     const error = t.throws(
       () => container.registerValue(id, "some value"),
       Error,

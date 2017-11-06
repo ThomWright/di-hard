@@ -16,7 +16,11 @@ test("container visibility (child -> parent)", t => {
   const child = parent.child("child")
 
   const instance = child.resolve("testComponent")
-  t.is(instance, "testComponentInstance", "children containers should be able to access components registered with the parent container")
+  t.is(
+    instance,
+    "testComponentInstance",
+    "children containers should be able to access components registered with the parent container",
+  )
 })
 
 test("container visibility (parent -> child)", t => {
@@ -30,10 +34,18 @@ test("container visibility (parent -> child)", t => {
   const error = t.throws(
     () => child.resolve("thingID"),
     Error,
-    "should throw when requesting a dependency that's only registered in a child's container"
+    "should throw when requesting a dependency that's only registered in a child's container",
   )
-  t.regex(error.message, /thingID \(parentContainer\) -> depID \(grandparentContainer\)/, "should specify dependency path")
-  t.regex(error.message, /parentContainer -> grandparentContainer/, "should specify container search path")
+  t.regex(
+    error.message,
+    /thingID \(parentContainer\) -> depID \(grandparentContainer\)/,
+    "should specify dependency path",
+  )
+  t.regex(
+    error.message,
+    /parentContainer -> grandparentContainer/,
+    "should specify container search path",
+  )
 })
 
 test("registering definitions", t => {
@@ -44,7 +56,7 @@ test("registering definitions", t => {
   const error = t.throws(
     () => parent.resolve("testComponent"),
     Error,
-    "parent should not be able to access components registered with a child"
+    "parent should not be able to access components registered with a child",
   )
   t.regex(error.message, /testComponent \(root\)/)
 })
@@ -55,9 +67,13 @@ test("with same name as parent", t => {
   const error = t.throws(
     () => child.child("parentContainer"),
     Error,
-    "should throw when creating a child container with the same name as any visible container"
+    "should throw when creating a child container with the same name as any visible container",
   )
-  t.regex(error.message, /childContainer -> parentContainer/, "should show hierarchy in error message")
+  t.regex(
+    error.message,
+    /childContainer -> parentContainer/,
+    "should show hierarchy in error message",
+  )
 })
 
 test("unknown id", t => {
@@ -68,7 +84,7 @@ test("unknown id", t => {
   const error = t.throws(
     () => container.resolve("notThere"),
     Error,
-    "should throw when requesting an unknown id"
+    "should throw when requesting an unknown id",
   )
   t.regex(error.message, /notThere \(high\)/, "should specify unknown id")
   t.regex(error.message, /low -> mid -> high/, "should specify search path")
@@ -91,11 +107,12 @@ test("unknown dependency id", t => {
   const error = t.throws(
     () => container.resolve("testComponent"),
     Error,
-    "should throw when requesting to inject unknown id"
+    "should throw when requesting to inject unknown id",
   )
-  t.regex(error.message,
+  t.regex(
+    error.message,
     /testComponent \(low\) -> dependencyName \(high\)/,
-    "should specify unknown id"
+    "should specify unknown id",
   )
   t.regex(error.message, /low -> mid -> high/, "should specify search path")
 })
@@ -108,12 +125,20 @@ test("shadowing parent registrations", t => {
 
   t.notThrows(
     () => child.registerFactory("uniqueId", () => "child instance"),
-    "should be able to register same name in parent and child containers"
+    "should be able to register same name in parent and child containers",
   )
 
   const parentInstance = parent.resolve("uniqueId")
-  t.is(parentInstance, "parent instance", "parent should resolve to the parent instance")
+  t.is(
+    parentInstance,
+    "parent instance",
+    "parent should resolve to the parent instance",
+  )
 
   const childInstance = child.resolve("uniqueId")
-  t.is(childInstance, "child instance", "child should resolve to the child instance")
+  t.is(
+    childInstance,
+    "child instance",
+    "child should resolve to the child instance",
+  )
 })
