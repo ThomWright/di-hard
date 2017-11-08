@@ -38,7 +38,7 @@
     "test": "npm run test-unit && npm run lint",
     "preversion": "npm test",
     "prepush": "npm test",
-    "prepublish": "npm test && npm run build"
+    "prepublishOnly": "npm test && npm run build"
   },
   "dependencies": {},
   "devDependencies": {
