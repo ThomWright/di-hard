@@ -1,3 +1,5 @@
+// tslint:disable-next-line no-var-requires
+const leven = require("leven")
 import {
   Id,
   ComponentRegistration,
@@ -9,6 +11,7 @@ import {
   isPathEqual as sameModulePath,
   exists,
   cacheInstance,
+  getAllResolvableIds,
 } from "./modules"
 import {ContainerInternalApi} from "./container"
 import Lifetime from "./lifetimes"
@@ -27,16 +30,20 @@ export default function createResolver({
   parentContainer,
   rootModuleReg,
   fromModuleReg,
+
   previousDependencyPath = [],
   previouslySearchedContainers = [],
+  previouslyResolvableIds = new Set<Id>(),
 }: {
   containerName: string
   forComponent: ComponentRegistration
   parentContainer?: ContainerInternalApi
   rootModuleReg: ModuleRegistration
   fromModuleReg: ModuleRegistration
+
   previousDependencyPath: LocationInfo[]
   previouslySearchedContainers: string[]
+  previouslyResolvableIds: Set<Id>
 }): Resolver {
   const intoModulePath = forComponent.modulePath
   const isVisibleFrom = forRootModule(rootModuleReg)
@@ -66,17 +73,28 @@ export default function createResolver({
             ...previouslySearchedContainers,
             containerName,
           ]
+
+          const resolvableIds = new Set([
+            ...getAllResolvableIds(fromModuleReg.module),
+            ...previouslyResolvableIds,
+          ])
+
           if (!parentContainer) {
+            const typoSuggestions = getCloselyMatchingIds(id, resolvableIds)
             throw new Error(
               `Nothing registered for '${formattedModulePath}' in containers: '${searchedContainers.join(
                 " -> ",
-              )}'.` + ` Trying to resolve: '${formatDepPath(dependencyPath)}'.`,
+              )}'.` +
+                ` Trying to resolve: '${formatDepPath(dependencyPath)}'.` +
+                typoSuggestions,
             )
           }
+
           return parentContainer.resolve(
             id,
             previousDependencyPath,
             searchedContainers,
+            resolvableIds,
           )
         }
 
@@ -117,6 +135,7 @@ export default function createResolver({
               fromModuleReg: mod,
               previousDependencyPath,
               previouslySearchedContainers,
+              previouslyResolvableIds,
             })
           }
         }
@@ -135,6 +154,7 @@ export default function createResolver({
               fromModuleReg: rootModuleReg,
               previousDependencyPath: dependencyPath,
               previouslySearchedContainers,
+              previouslyResolvableIds,
             })
             const instance = factory(resolver)
 
@@ -173,4 +193,20 @@ function sameIdAndContainer({
       other.containerName === containerName
     )
   }
+}
+
+function getCloselyMatchingIds(id: Id, ids: Set<Id>): string {
+  const closeIds: Id[] = []
+  ids.forEach(otherId => {
+    if (leven(id, otherId) <= 3) {
+      closeIds.push(otherId)
+    }
+  })
+
+  return closeIds.length === 0
+    ? ""
+    : " " +
+        (closeIds.length === 1
+          ? `Did you mean: ${closeIds[0]}?`
+          : `Did you mean one of: ${closeIds}?`)
 }

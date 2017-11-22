@@ -32,6 +32,62 @@ test("non-existant component instance", t => {
   t.regex(error.message, /nopenopenope/, "should specify the problem ID")
 })
 
+test("non-existant component instance when similarly named components exist", t => {
+  const container = createContainer("root")
+  container.registerValue("thom", "")
+
+  const error = t.throws(
+    () => container.resolve("tom"),
+    Error,
+    "should not be able to resolve something that has not been registered",
+  )
+
+  t.regex(error.message, /thom/, "should suggest the similarly named component")
+})
+
+test("non-existant component instance when similarly named components exist only in child container", t => {
+  const container = createContainer("root")
+  container.registerValue("thom", "")
+  const child = container.child("child")
+  child.registerValue("tin", "")
+
+  const error = t.throws(
+    () => child.resolve("tom"),
+    Error,
+    "should not be able to resolve something that has not been registered",
+  )
+
+  t.regex(
+    error.message,
+    /thom/,
+    "should suggest the similarly named components",
+  )
+  t.regex(error.message, /tin/, "should suggest the similarly named components")
+})
+
+test("non-existant component instance when similarly named components exist only in submodule", t => {
+  const container = createContainer("root")
+  container.registerValue("tim", "")
+  container.registerSubmodule("moduleId").registerValue("thom", "")
+
+  const error = t.throws(
+    () => container.resolve("moduleId.tom"),
+    Error,
+    "should not be able to resolve something that has not been registered",
+  )
+
+  t.regex(
+    error.message,
+    /thom/,
+    "should suggest the similarly named component in the same module",
+  )
+  t.notRegex(
+    error.message,
+    /tim/,
+    "should not suggest the similarly named components from another module",
+  )
+})
+
 test("falsy instance", t => {
   const container = createContainer("root")
   container.registerValue("id", undefined)

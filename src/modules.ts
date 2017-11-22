@@ -54,6 +54,7 @@ export {
   getParentPath,
   joinModulePath,
   isPathEqual,
+  getAllResolvableIds,
 }
 
 function createRootModuleRegistration(): ModuleRegistration {
@@ -272,4 +273,14 @@ function isPathEqual(
   modulePath2: ModulePath,
 ): boolean {
   return formatModulePath(modulePath1) === formatModulePath(modulePath2)
+}
+
+function getAllResolvableIds(mod: Module): Set<Id> {
+  const s = new Set<Id>()
+
+  Object.getOwnPropertyNames(mod.factories).forEach(id => s.add(id))
+  Object.getOwnPropertyNames(mod.instances).forEach(id => s.add(id))
+  Object.getOwnPropertyNames(mod.modules).forEach(id => s.add(id))
+
+  return s
 }
