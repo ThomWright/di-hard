@@ -49,7 +49,7 @@ export interface ContainerInternalApi {
     id: Id,
     previousDependencyPath?: LocationInfo[],
     previouslySearchedContainers?: string[],
-    previouslyResolvableIds?: Set<Id>,
+    previouslyResolvableIds?: Array<Set<Id>>,
   ): Instance
   getDebugInfo(): DebugInfo
   visiblePathToContainer(targetContainer: string): string[] | undefined
@@ -85,7 +85,7 @@ function _createContainer({
       formattedModulePath: string,
       previousDependencyPath: LocationInfo[] = [],
       previouslySearchedContainers: string[] = [],
-      previouslyResolvableIds: Set<Id> = new Set<Id>(),
+      previouslyResolvableIds: Array<Set<Id>> = [],
     ): Instance {
       const fullComponentPath = parseModulePath(formattedModulePath)
       const {parentModulePath, componentId} = splitModulePath(fullComponentPath)

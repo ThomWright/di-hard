@@ -33,7 +33,7 @@ export default function createResolver({
 
   previousDependencyPath = [],
   previouslySearchedContainers = [],
-  previouslyResolvableIds = new Set<Id>(),
+  previouslyResolvableIds = [],
 }: {
   containerName: string
   forComponent: ComponentRegistration
@@ -43,7 +43,7 @@ export default function createResolver({
 
   previousDependencyPath: LocationInfo[]
   previouslySearchedContainers: string[]
-  previouslyResolvableIds: Set<Id>
+  previouslyResolvableIds: Array<Set<Id>>
 }): Resolver {
   const intoModulePath = forComponent.modulePath
   const isVisibleFrom = forRootModule(rootModuleReg)
@@ -74,12 +74,14 @@ export default function createResolver({
             containerName,
           ]
 
-          const resolvableIds = new Set([
-            ...getAllResolvableIds(fromModuleReg.module),
-            ...previouslyResolvableIds,
-          ])
-
           if (!parentContainer) {
+            const resolvableIds = new Set([
+              ...getAllResolvableIds(fromModuleReg.module),
+              ...previouslyResolvableIds.reduce<string[]>(
+                (accArray, set) => accArray.concat(...set),
+                [],
+              ),
+            ])
             const typoSuggestions = getCloselyMatchingIds(id, resolvableIds)
             throw new Error(
               `Nothing registered for '${formattedModulePath}' in containers: '${searchedContainers.join(
@@ -94,7 +96,10 @@ export default function createResolver({
             id,
             previousDependencyPath,
             searchedContainers,
-            resolvableIds,
+            [
+              getAllResolvableIds(fromModuleReg.module),
+              ...previouslyResolvableIds,
+            ],
           )
         }
 
@@ -170,7 +175,9 @@ export default function createResolver({
 
       set(_, name: PropertyKey, value: any): boolean {
         throw new Error(
-          `Can't set values on the resolver. Attempted to set '${name}' to '${value}'.`,
+          `Can't set values on the resolver. Attempted to set '${String(
+            name,
+          )}' to '${value}'.`,
         )
       },
     },
