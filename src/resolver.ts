@@ -11,7 +11,7 @@ import {
   isPathEqual as sameModulePath,
   exists,
   cacheInstance,
-  getAllResolvableIds,
+  putResolvableIdsIntoSet,
 } from "./modules"
 import {ContainerInternalApi} from "./container"
 import Lifetime from "./lifetimes"
@@ -33,7 +33,7 @@ export default function createResolver({
 
   previousDependencyPath = [],
   previouslySearchedContainers = [],
-  previouslyResolvableIds = [],
+  gatherPreviouslyResolvableIds = [],
 }: {
   containerName: string
   forComponent: ComponentRegistration
@@ -43,7 +43,7 @@ export default function createResolver({
 
   previousDependencyPath: LocationInfo[]
   previouslySearchedContainers: string[]
-  previouslyResolvableIds: Array<Set<Id>>
+  gatherPreviouslyResolvableIds: Array<(s: Set<Id>) => void>
 }): Resolver {
   const intoModulePath = forComponent.modulePath
   const isVisibleFrom = forRootModule(rootModuleReg)
@@ -75,13 +75,12 @@ export default function createResolver({
           ]
 
           if (!parentContainer) {
-            const resolvableIds = new Set([
-              ...getAllResolvableIds(fromModuleReg.module),
-              ...previouslyResolvableIds.reduce<string[]>(
-                (accArray, set) => accArray.concat(...set),
-                [],
-              ),
-            ])
+            const resolvableIds = new Set<Id>()
+            putResolvableIdsIntoSet(fromModuleReg.module)(resolvableIds)
+            gatherPreviouslyResolvableIds.forEach(putIntoSet =>
+              putIntoSet(resolvableIds),
+            )
+
             const typoSuggestions = getCloselyMatchingIds(id, resolvableIds)
             throw new Error(
               `Nothing registered for '${formattedModulePath}' in containers: '${searchedContainers.join(
@@ -97,8 +96,8 @@ export default function createResolver({
             previousDependencyPath,
             searchedContainers,
             [
-              getAllResolvableIds(fromModuleReg.module),
-              ...previouslyResolvableIds,
+              putResolvableIdsIntoSet(fromModuleReg.module),
+              ...gatherPreviouslyResolvableIds,
             ],
           )
         }
@@ -140,7 +139,7 @@ export default function createResolver({
               fromModuleReg: mod,
               previousDependencyPath,
               previouslySearchedContainers,
-              previouslyResolvableIds,
+              gatherPreviouslyResolvableIds,
             })
           }
         }
@@ -159,7 +158,7 @@ export default function createResolver({
               fromModuleReg: rootModuleReg,
               previousDependencyPath: dependencyPath,
               previouslySearchedContainers,
-              previouslyResolvableIds,
+              gatherPreviouslyResolvableIds,
             })
             const instance = factory(resolver)
 
